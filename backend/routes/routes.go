@@ -7,4 +7,5 @@ import (
 func Setup(app *fiber.App) {
 	SetupAuthRoutes(app)
 	SetupUserRoutes(app)
+	SetupLocationRoutes(app)
 }
