@@ -1,11 +1,10 @@
-// NOTE: full file replaced below
 "use client";
 import React from 'react';
 import Image from 'next/image';
 import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import Header from "../components/header";
 
-// Render percent label (angka) positioned slightly outside the outerRadius
+
 function renderPercentLabel(props: any) {
     const { cx, cy, midAngle, outerRadius, percent } = props;
     const RADIAN = Math.PI / 180;
@@ -32,7 +31,6 @@ function renderLegend(props: any) {
     const { payload } = props;
     if (!payload) return null;
     const total = pieData.reduce((s: number, p: any) => s + (p.value || 0), 0);
-    // horizontal white boxed legend with name + percent
     return (
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 12, flexWrap: 'wrap' }}>
             {payload.map((entry: any, idx: number) => {
@@ -61,7 +59,6 @@ const pieData = [
 ];
 const pieColors = ['#5EB5C4', '#E5E7EB'];
 
-// compute simple percentages for legend badges
 const _pieTotal = pieData.reduce((s: number, p: any) => s + (p.value || 0), 0) || 1;
 const PIE_PERCENTS = pieData.map(p => Math.round(((p.value || 0) / _pieTotal) * 100));
 
