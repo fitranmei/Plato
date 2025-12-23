@@ -4,30 +4,25 @@ import Link from 'next/link';
 import { Home, MapPin, Video, Truck, Users } from 'lucide-react';
 
 export default function Sidebar({ controlledOpen, setOpen, isDesktop }: { controlledOpen?: boolean; setOpen?: (v: boolean) => void; isDesktop?: boolean }) {
-  // If parent provides controlledOpen, use it; otherwise behave uncontrolled (legacy)
   const [openLocal, setOpenLocal] = useState<boolean>(false);
   const open = typeof controlledOpen === 'boolean' ? controlledOpen : openLocal;
   const setOpenUsed = setOpen || setOpenLocal;
 
-  // If parent does not control the sidebar, initialize local resize/listeners
+  // Logic resize window (untuk UX responsif)
   const [isDesktopLocal, setIsDesktopLocal] = useState<boolean>(false);
   const desktop = typeof isDesktop === 'boolean' ? isDesktop : isDesktopLocal;
 
   useEffect(() => {
-    // only run uncontrolled behavior when parent didn't provide a controller
     if (typeof controlledOpen === 'boolean' || typeof setOpen === 'function') return;
 
     function onToggle() {
       setOpenLocal((v) => !v);
     }
-    // custom event from Header
     window.addEventListener('toggleSidebar', onToggle as EventListener);
 
-    // detect desktop / mobile and set initial open state
     function handleResize() {
       const isD = window.matchMedia('(min-width: 1024px)').matches;
       setIsDesktopLocal(isD);
-      // keep sidebar open on desktop, closed on mobile unless previously opened
       if (isD) setOpenLocal(true);
     }
 
@@ -40,7 +35,7 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop }: { contro
     };
   }, [controlledOpen, setOpen]);
 
-  // close on navigation on small screens (only when uncontrolled or controlled via prop)
+  // Tutup sidebar saat ganti halaman di HP
   useEffect(() => {
     function onRoute() {
       if (!desktop) setOpenUsed(false);
@@ -51,7 +46,7 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop }: { contro
 
   return (
     <>
-      {/* overlay for mobile when open */}
+      {/* Overlay hitam (Cuma muncul di HP saat menu terbuka) */}
       {open && !desktop && (
         <div
           className="fixed inset-0 z-40 bg-black/40 lg:hidden"
@@ -60,62 +55,66 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop }: { contro
         />
       )}
 
+      {/* SIDEBAR UTAMA */}
       <aside
-        className={`fixed top-0 left-0 h-full z-50 transform bg-gray-100 text-gray-900 transition-transform duration-300 ease-in-out shadow-lg ${open ? 'translate-x-0' : '-translate-x-full'} w-64 lg:translate-x-0 lg:block`}
+        // PERBAIKAN DI SINI:
+        // 1. Hapus 'lg:translate-x-0' (Biar dia mau sembunyi kalau open=false)
+        // 2. Pertahankan 'lg:fixed' (Biar melayang)
+        className={`fixed top-0 left-0 h-full z-50 transform bg-gray-100 text-gray-900 transition-transform duration-300 ease-in-out shadow-lg 
+        ${open ? 'translate-x-0' : '-translate-x-full'} 
+        w-64 lg:fixed lg:block border-r border-gray-200`}
         aria-hidden={!open}
       >
         <div className="h-full flex flex-col">
-        <div className="p-4 border-b">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded bg-indigo-700 flex items-center justify-center text-white">P</div>
-            <div className="font-bold">Admin Monitoring</div>
-          </div>
+          
+          {/* Header Sidebar (Logo P) */}
+          {/* <div className="p-4 border-b h-16 flex items-center">
+            <div className="flex items-center gap-3">
+              <div className="font-bold text-lg tracking-tight">Admin Panel</div>
+            </div>
+          </div> */}
+
+          {/* Menu Navigasi */}
+          <nav className="flex-1 overflow-auto p-3">
+            <ul className="space-y-1">
+              <li>
+                <Link href="/home" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 text-gray-700 hover:text-black transition-colors font-medium">
+                  <Home size={20} /> <span>Beranda</span>
+                </Link>
+              </li>
+
+              <li className="mt-4 mb-2 text-xs font-bold uppercase text-gray-400 px-3 tracking-wider">Manajemen Data</li>
+              <li>
+                <Link href="/lokasi" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 text-gray-700 hover:text-black transition-colors font-medium">
+                  <MapPin size={20} /> <span>Data Lokasi</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/kamera" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 text-gray-700 hover:text-black transition-colors font-medium">
+                  <Video size={20} /> <span>Data Kamera</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/klasifikasi" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 text-gray-700 hover:text-black transition-colors font-medium">
+                  <Truck size={20} /> <span>Klasifikasi Kendaraan</span>
+                </Link>
+              </li>
+
+              <li className="mt-4 mb-2 text-xs font-bold uppercase text-gray-400 px-3 tracking-wider">Manajemen User</li>
+              <li>
+                <Link href="/manajemen-user" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 text-gray-700 hover:text-black transition-colors font-medium">
+                  <Users size={20} /> <span>Data User</span>
+                </Link>
+              </li>
+            </ul>
+          </nav>
+
+          {/* Footer Sidebar (Opsional) */}
+          {/* <div className="p-4 border-t text-xs text-center text-gray-400">
+            &copy; 2025 Intens
+          </div> */}
         </div>
-
-        <nav className="flex-1 overflow-auto p-2">
-          <ul className="space-y-1">
-            <li>
-              <Link href="/home" className="flex items-center gap-3 p-3 rounded hover:bg-gray-200">
-                <Home size={18} /> <span>Beranda</span>
-              </Link>
-            </li>
-
-            <li className="mt-2 text-xs uppercase text-gray-500 px-3">Manajemen Data</li>
-            <li>
-              <Link href="/lokasi" className="flex items-center gap-3 p-3 rounded hover:bg-gray-200">
-                <MapPin size={18} /> <span>Data Lokasi</span>
-              </Link>
-            </li>
-            <li>
-              <Link href="/kamera" className="flex items-center gap-3 p-3 rounded hover:bg-gray-200">
-                <Video size={18} /> <span>Data Kamera</span>
-              </Link>
-            </li>
-            <li>
-              <Link href="/klasifikasi" className="flex items-center gap-3 p-3 rounded hover:bg-gray-200">
-                <Truck size={18} /> <span>Klasifikasi Kendaraan</span>
-              </Link>
-            </li>
-
-            <li className="mt-4 text-xs uppercase text-gray-500 px-3">Manajemen User</li>
-            <li>
-              <Link href="/manajemen-user" className="flex items-center gap-3 p-3 rounded hover:bg-gray-200">
-                <Users size={18} /> <span>Data User</span>
-              </Link>
-            </li>
-          </ul>
-        </nav>
-
-        <div className="p-4 border-t">
-          <button
-            onClick={() => setOpenUsed(!open)}
-            className="w-full text-left text-sm text-gray-700 p-2 rounded hover:bg-gray-200"
-          >
-            Toggle Menu
-          </button>
-        </div>
-      </div>
       </aside>
     </>
-    );
+  );
 }
