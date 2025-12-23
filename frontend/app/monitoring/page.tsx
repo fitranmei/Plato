@@ -1,8 +1,34 @@
+
 "use client";
 import React from 'react';
 import Image from 'next/image';
 import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis } from 'recharts';
-import Header from "../components/header";
+
+// Bar color mapping for tooltip swatches
+const BAR_COLOR_MAP: Record<string, string> = {
+    'Sumedang Kota': '#5EB5C4',
+    'Cimalaka': '#E5E7EB',
+    sumedang: '#5EB5C4',
+    cimalaka: '#E5E7EB'
+};
+
+function CustomBarTooltip({ active, payload, label }: any) {
+    if (!active || !payload || !payload.length) return null;
+    return (
+        <div style={{ background: '#fff', color: '#0f172a', padding: 10, borderRadius: 8, boxShadow: '0 6px 18px rgba(2,6,23,0.18)' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{label}</div>
+            {payload.map((p: any, i: number) => {
+                const color = p.color || p.fill || BAR_COLOR_MAP[p.name] || BAR_COLOR_MAP[p.dataKey] || '#333';
+                return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                        <span style={{ width: 12, height: 12, background: color, borderRadius: 3, display: 'inline-block' }} />
+                        <span style={{ fontSize: 13 }}>{p.name} : <strong style={{ marginLeft: 6 }}>{p.value}</strong></span>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
 
 
 function renderPercentLabel(props: any) {
@@ -76,9 +102,8 @@ const barData = [
 export default function MonitoringPage() {
     return (
         <main className="min-h-screen bg-[#1E293B] text-white font-sans pb-10">
-            <Header />
 
-            <div className="p-6 max-w-7xl mx-auto flex flex-col gap-8">
+            <div className="p-6 max-w-7xl mx-auto flex flex-col gap-8 transform scale-90 origin-top">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="flex flex-col gap-6">
                         <DetailCard
@@ -179,8 +204,8 @@ export default function MonitoringPage() {
                         <BarChart width={350} height={300} data={barData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
                             <XAxis dataKey="date" />
                             <YAxis />
-                            <Tooltip />
-                            <Legend />
+                            <Tooltip content={<CustomBarTooltip />} cursor={{ fill: 'rgba(255,255,255,0.06)' }} />
+                            <Legend wrapperStyle={{ color: '#ffffff' }} />
                             <Bar dataKey="sumedang" fill="#5EB5C4" name="Sumedang Kota" />
                             <Bar dataKey="cimalaka" fill="#E5E7EB" name="Cimalaka" />
                         </BarChart>

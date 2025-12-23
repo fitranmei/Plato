@@ -25,6 +25,7 @@ export default function LoginPage() {
                         className="w-full px-4 py-3 mt-4 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-800"
                         required
                     />
+                    <Link href="/home" >
                     <button
                         type="submit"
                         className=" mt-4 w-full bg-blue-900 text-white font-semibold py-3 rounded-lg shadow-sm hover:brightness-110 active:brightness-90 focus:ring-2 focus:ring-brand-500
@@ -32,6 +33,7 @@ export default function LoginPage() {
                     >
                     Masuk
                     </button>
+                    </Link>
                 </div>
             </div>
             <div className="absolute bottom-6 w-full text-center">

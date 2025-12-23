@@ -1,5 +1,6 @@
 // components/TrafficCard.tsx
 import React from 'react';
+import Link from 'next/link';
 
 interface HomeCardProps {
   location: string; 
@@ -23,7 +24,7 @@ const HomeCard = ({
     const headerColor = status === 'Online' ? 'bg-[#00AA13]' : 'bg-red-500';
     const isOnline = status === 'Online';
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden w-full max-w-lg">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden w-full max-w-lg transform scale-90">
       
       <div className={`${headerColor} p-5 flex justify-between items-start text-white`}>
         <div className="font-bold text-xl">
@@ -71,12 +72,15 @@ const HomeCard = ({
             <span className="text-gray-600 font-medium ml-1">SMP/jam</span>
           </div>
 
-          <button disabled={!isOnline} className={`
-              font-semibold py-2 px-6 rounded-lg transition-colors shadow-sm
-              ${isOnline ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}
-            `}>
-            Monitoring
-          </button>
+          {isOnline ? (
+            <Link href="/monitoring" className={`font-semibold py-2 px-6 rounded-lg transition-colors shadow-sm bg-blue-500 hover:bg-blue-600 text-white`}>
+              Monitoring
+            </Link>
+          ) : (
+            <button disabled className={`font-semibold py-2 px-6 rounded-lg transition-colors shadow-sm bg-gray-300 text-gray-500 cursor-not-allowed`}>
+              Monitoring
+            </button>
+          )}
 
         </div>
       </div>

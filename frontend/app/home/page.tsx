@@ -1,17 +1,15 @@
   import dynamic from 'next/dynamic';
-  import Header from "../components/header";
   import HomeCard from "../components/homeCard";
   import MapWrapper from '../components/MapWrapper';
 
   export default function UserPage() {
     return (
       <main className="min-h-screen flex flex-col bg-gray-100 bg-[url('/images/bg-home.png')] bg-center">
-        <Header />
         <section className="p-6 px-40 flex flex-col">
           <div className="w-full h-[400px] bg-white rounded-xl mb-10 overflow-hidden shadow-md border border-gray-200">
            <MapWrapper />
           </div>
-          <div className="flex flex-row gap-10 flex-wrap justify-center">
+          <div className="flex flex-row gap-3 flex-wrap justify-center">
             <HomeCard 
             location="TFC - Cimayor"
             lastUpdate="19:00:02"
