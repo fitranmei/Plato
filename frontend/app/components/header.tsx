@@ -16,10 +16,11 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
 
   // 1. Cek Mode Halaman
   const isHome = pathname === "/home" || pathname === "/";
-  const isAdminPage = 
-    pathname?.startsWith('/lokasi') || 
-    pathname?.startsWith('/kamera') || 
-    pathname?.startsWith('/klasifikasi') || 
+  const isAdminPage =
+    pathname?.startsWith('/lokasi') ||
+    pathname?.startsWith('/kamera') ||
+    pathname?.startsWith('/kendaraan') ||
+    pathname?.startsWith('/klasifikasi') ||
     pathname?.startsWith('/manajemen-user');
 
   // Logic Judul Halaman Detail

@@ -11,7 +11,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const showSidebar = 
     pathname.startsWith('/lokasi') || 
     pathname.startsWith('/kamera') || 
-    pathname.startsWith('/klasifikasi') || 
+    pathname.startsWith('/kendaraan') || 
     pathname.startsWith('/manajemen-user');
 
   const [open, setOpen] = useState<boolean>(false);

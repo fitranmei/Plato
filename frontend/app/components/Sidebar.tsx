@@ -2,11 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Home, MapPin, Video, Truck, Users } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 export default function Sidebar({ controlledOpen, setOpen, isDesktop }: { controlledOpen?: boolean; setOpen?: (v: boolean) => void; isDesktop?: boolean }) {
   const [openLocal, setOpenLocal] = useState<boolean>(false);
   const open = typeof controlledOpen === 'boolean' ? controlledOpen : openLocal;
   const setOpenUsed = setOpen || setOpenLocal;
+  const pathname = usePathname();
 
   // Logic resize window (untuk UX responsif)
   const [isDesktopLocal, setIsDesktopLocal] = useState<boolean>(false);
@@ -61,9 +63,9 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop }: { contro
         // 1. Hapus 'lg:translate-x-0' (Biar dia mau sembunyi kalau open=false)
         // 2. Pertahankan 'lg:fixed' (Biar melayang)
         className={`fixed top-0 left-0 h-full z-50 transform bg-gray-100 text-gray-900 transition-transform duration-300 ease-in-out shadow-lg 
-        ${open ? 'translate-x-0' : '-translate-x-full'} 
-        w-64 lg:fixed lg:block border-r border-gray-200`}
-        aria-hidden={!open}
+        ${open ? 'translate-x-0' : '-translate-x-full'}
+        w-64 lg:fixed lg:block border-r border-gray-200`} 
+        aria-hidden={open ? false : true}
       >
         <div className="h-full flex flex-col">
           
@@ -78,31 +80,31 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop }: { contro
           <nav className="flex-1 overflow-auto p-3">
             <ul className="space-y-1">
               <li>
-                <Link href="/home" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 text-gray-700 hover:text-black transition-colors font-medium">
+                <Link href="/home" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/home' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
                   <Home size={20} /> <span>Beranda</span>
                 </Link>
               </li>
 
               <li className="mt-4 mb-2 text-xs font-bold uppercase text-gray-400 px-3 tracking-wider">Manajemen Data</li>
               <li>
-                <Link href="/lokasi" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 text-gray-700 hover:text-black transition-colors font-medium">
+                <Link href="/lokasi" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/lokasi' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
                   <MapPin size={20} /> <span>Data Lokasi</span>
                 </Link>
               </li>
               <li>
-                <Link href="/kamera" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 text-gray-700 hover:text-black transition-colors font-medium">
+                <Link href="/kamera" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/kamera' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
                   <Video size={20} /> <span>Data Kamera</span>
                 </Link>
               </li>
               <li>
-                <Link href="/klasifikasi" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 text-gray-700 hover:text-black transition-colors font-medium">
+                <Link href="/kendaraan" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/kendaraan' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
                   <Truck size={20} /> <span>Klasifikasi Kendaraan</span>
                 </Link>
               </li>
 
               <li className="mt-4 mb-2 text-xs font-bold uppercase text-gray-400 px-3 tracking-wider">Manajemen User</li>
               <li>
-                <Link href="/manajemen-user" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 text-gray-700 hover:text-black transition-colors font-medium">
+                <Link href="/manajemen-user" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/manajemen-user' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
                   <Users size={20} /> <span>Data User</span>
                 </Link>
               </li>
