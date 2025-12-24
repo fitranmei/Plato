@@ -10,7 +10,6 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop, isDark }: 
   const setOpenUsed = setOpen || setOpenLocal;
   const pathname = usePathname();
 
-  // Logic resize window (untuk UX responsif)
   const [isDesktopLocal, setIsDesktopLocal] = useState<boolean>(false);
   const desktop = typeof isDesktop === 'boolean' ? isDesktop : isDesktopLocal;
 
@@ -37,7 +36,6 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop, isDark }: 
     };
   }, [controlledOpen, setOpen]);
 
-  // Tutup sidebar saat ganti halaman di HP
   useEffect(() => {
     function onRoute() {
       if (!desktop) setOpenUsed(false);
@@ -48,7 +46,6 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop, isDark }: 
 
   return (
     <>
-      {/* Overlay hitam (Cuma muncul di HP saat menu terbuka) */}
       {open && !desktop && (
         <div
           className="fixed inset-0 z-40 bg-black/40 lg:hidden"
@@ -57,7 +54,6 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop, isDark }: 
         />
       )}
 
-      {/* SIDEBAR UTAMA */}
       <aside
       className={`fixed top-0 left-0 h-full z-50 transform transition-transform duration-300 ease-in-out shadow-lg
       ${open ? 'translate-x-0' : '-translate-x-full'}
@@ -70,14 +66,6 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop, isDark }: 
 
         <div className="h-full flex flex-col">
           
-          {/* Header Sidebar (Logo P) */}
-          {/* <div className="p-4 border-b h-16 flex items-center">
-            <div className="flex items-center gap-3">
-              <div className="font-bold text-lg tracking-tight">Admin Panel</div>
-            </div>
-          </div> */}
-
-          {/* Menu Navigasi */}
           <nav className="flex-1 overflow-auto p-3">
             <ul className="space-y-1">
               <li>
@@ -111,11 +99,6 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop, isDark }: 
               </li>
             </ul>
           </nav>
-
-          {/* Footer Sidebar (Opsional) */}
-          {/* <div className="p-4 border-t text-xs text-center text-gray-400">
-            &copy; 2025 Intens
-          </div> */}
         </div>
       </aside>
     </>
