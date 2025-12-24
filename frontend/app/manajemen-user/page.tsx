@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
+import { useModalContext } from "../components/ModalContext";
 
 type User = {
   id: number;
@@ -12,6 +13,8 @@ type User = {
 };
 
 export default function ManajemenUserPage() {
+  const { setIsModalOpen } = useModalContext();
+
   // ================= STATE =================
   const [users, setUsers] = useState<User[]>([
     {
@@ -40,6 +43,10 @@ export default function ManajemenUserPage() {
     confirm: "",
     level: "",
   });
+
+  useEffect(() => {
+    setIsModalOpen(showModal);
+  }, [showModal, setIsModalOpen]);
 
   // ================= LOGIC =================
   const filteredUsers = users.filter((u) =>

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Home, MapPin, Video, Truck, Users } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
-export default function Sidebar({ controlledOpen, setOpen, isDesktop }: { controlledOpen?: boolean; setOpen?: (v: boolean) => void; isDesktop?: boolean }) {
+export default function Sidebar({ controlledOpen, setOpen, isDesktop, isDark }: { controlledOpen?: boolean; setOpen?: (v: boolean) => void; isDesktop?: boolean; isDark?: boolean }) {
   const [openLocal, setOpenLocal] = useState<boolean>(false);
   const open = typeof controlledOpen === 'boolean' ? controlledOpen : openLocal;
   const setOpenUsed = setOpen || setOpenLocal;
@@ -59,14 +59,15 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop }: { contro
 
       {/* SIDEBAR UTAMA */}
       <aside
-        // PERBAIKAN DI SINI:
-        // 1. Hapus 'lg:translate-x-0' (Biar dia mau sembunyi kalau open=false)
-        // 2. Pertahankan 'lg:fixed' (Biar melayang)
-        className={`fixed top-0 left-0 h-full z-50 transform bg-gray-100 text-gray-900 transition-transform duration-300 ease-in-out shadow-lg 
-        ${open ? 'translate-x-0' : '-translate-x-full'}
-        w-64 lg:fixed lg:block border-r border-gray-200`} 
-        aria-hidden={open ? false : true}
-      >
+      className={`fixed top-0 left-0 h-full z-50 transform transition-transform duration-300 ease-in-out shadow-lg
+      ${open ? 'translate-x-0' : '-translate-x-full'}
+      w-64 lg:fixed lg:block border-r border-gray-200
+      bg-gray-50 text-gray-900
+      ${isDark ? 'opacity-25 pointer-events-none transition-opacity duration-300' : 'opacity-100 transition-opacity duration-300'}
+      `}
+>
+
+
         <div className="h-full flex flex-col">
           
           {/* Header Sidebar (Logo P) */}
