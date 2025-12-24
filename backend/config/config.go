@@ -20,8 +20,13 @@ func Load() *Config {
 		log.Fatal("gagal load file .env")
 	}
 
+	port := os.Getenv("APP_PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	return &Config{
-		AppPort:   os.Getenv("APP_PORT"),
+		AppPort:   port,
 		MongoURI:  os.Getenv("MONGO_URI"),
 		DBName:    os.Getenv("DB_NAME"),
 		JWTSecret: os.Getenv("JWT_SECRET"),

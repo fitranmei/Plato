@@ -2,10 +2,11 @@
 import React, { useEffect, useState } from 'react';
 import Header from './header';
 import Sidebar from './Sidebar';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '/';
+  const router = useRouter();
   
   // UPDATE DISINI: Daftar halaman yang punya Sidebar
   const showSidebar = 
@@ -16,6 +17,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const [open, setOpen] = useState<boolean>(false);
   const [isDesktop, setIsDesktop] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Cek autentikasi
+    const token = localStorage.getItem('token');
+    if (!token && pathname !== '/login') {
+      router.push('/login');
+    }
+  }, [pathname, router]);
 
   useEffect(() => {
     function handleResize() {
@@ -46,7 +55,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Geser konten ke kanan kalau sidebar muncul */}
       <div className={`${showSidebar && open ? 'lg:pl-64' : ''} transition-all duration-300`}>
-        <Header onToggleSidebar={showSidebar ? toggle : undefined} />
+        {pathname !== '/login' && <Header onToggleSidebar={showSidebar ? toggle : undefined} />}
         {children}
       </div>
     </div>

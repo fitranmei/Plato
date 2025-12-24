@@ -1,4 +1,4 @@
-'use client'; // Wajib ada di sini
+'use client'; 
 
 import dynamic from 'next/dynamic';
 

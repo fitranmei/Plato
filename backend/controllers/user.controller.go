@@ -83,7 +83,7 @@ func Login(c *fiber.Ctx) error {
 
 	if err != nil || !utils.CheckPassword(req.Password, user.Password) {
 		return c.Status(401).JSON(fiber.Map{
-			"error": "username atau password salah",
+			"error": "Username atau password salah",
 		})
 	}
 
@@ -100,8 +100,9 @@ func Login(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"token": token,
-		"role":  user.Role,
+		"token":    token,
+		"role":     user.Role,
+		"username": user.Username,
 	})
 }
 

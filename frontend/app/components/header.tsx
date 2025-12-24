@@ -16,16 +16,44 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
 
   // 1. Cek Mode Halaman
   const isHome = pathname === "/home" || pathname === "/";
-  const isAdminPage =
-    pathname?.startsWith('/lokasi') ||
-    pathname?.startsWith('/kamera') ||
-    pathname?.startsWith('/kendaraan') ||
-    pathname?.startsWith('/klasifikasi') ||
+  const isAdminPage = 
+    pathname?.startsWith('/lokasi') || 
+    pathname?.startsWith('/kamera') || 
+    pathname?.startsWith('/klasifikasi') || 
     pathname?.startsWith('/manajemen-user');
 
   // Logic Judul Halaman Detail
   let title = "Dashboard";
   if (pathname?.startsWith("/monitoring")) title = "TFC - Cimayor";
+
+  const [username, setUsername] = useState("User");
+
+  useEffect(() => {
+    const storedUsername = localStorage.getItem("username");
+    if (storedUsername) {
+      setUsername(storedUsername);
+    }
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        await fetch("/api/logout", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Logout failed", error);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      router.push("/login");
+    }
+  };
 
   // Klik luar tutup dropdown home
   useEffect(() => {
@@ -58,9 +86,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
              >
                 <Menu size={28} strokeWidth={2.5} />
              </button>
-             <h1 className="text-xl font-bold text-black tracking-tight">
-                 Admin Monitoring
-             </h1>
+          
            </div>
         ) : (
            // MODE 3: DETAIL MONITORING (Back + Judul Lokasi)
@@ -97,9 +123,9 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
         {isHome ? (
            // KANAN HOME: Nama + Dropdown Menu
            <div className="flex items-center gap-3 relative" ref={menuRef}>
-             <span className="font-bold text-base text-black hidden md:block">Andreas Calvin</span>
+             <span className="font-bold text-base text-black hidden md:block">{username}</span>
              <button 
-               onClick={() => setIsOpen(!isOpen)} 
+               onClick={() => setIsOpen(!isOpen)}  
                className={`p-1.5 rounded-lg transition-colors ${isOpen ? 'bg-gray-100' : 'hover:bg-gray-100'}`}
              >
                 <Menu size={28} strokeWidth={2.5} />
@@ -111,22 +137,22 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
                     <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">Manajemen Data</div>
                     <Link href="/lokasi" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-gray-50"><MapPin size={18}/> Lokasi SINDILA</Link>
                     <Link href="/kamera" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-gray-50"><Video size={18}/> Kamera SINDILA</Link>
-                    <Link href="/klasifikasi" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-gray-50"><Truck size={18}/> Klasifikasi Kendaraan</Link>
+                    <Link href="/kendaraan" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-gray-50"><Truck size={18}/> Klasifikasi Kendaraan</Link>
                     <div className="my-1 border-t border-gray-100"></div>
                     <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">Manajemen User</div>
                     <Link href="/manajemen-user" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-gray-50"><Users size={18}/> Manajemen User</Link>
                     <div className="my-1 border-t border-gray-100"></div>
-                    <Link href="/login" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"><LogOut size={18}/> Logout</Link>
+                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 text-left"><LogOut size={18}/> Logout</button>
                 </div>
              )}
            </div>
         ) : (
            // KANAN ADMIN & MONITORING: Nama + Icon Logout
            <div className="flex items-center gap-4">
-             <span className="font-bold text-base text-black hidden md:block">Andreas Calvin</span>
-             <Link href="/login" className="hover:bg-gray-100 p-1.5 rounded-lg transition-colors group" title="Logout">
+             <span className="font-bold text-base text-black hidden md:block">{username}</span>
+             <button onClick={handleLogout} className="hover:bg-gray-100 p-1.5 rounded-lg transition-colors group" title="Logout">
                  <LogOut size={24} strokeWidth={2.5} className="text-black group-hover:text-red-600 transition-colors" />
-             </Link>
+             </button>
            </div>
         )}
       </div>
