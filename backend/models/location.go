@@ -13,7 +13,6 @@ import (
 
 var (
 	TipeLokasiOptions    = []string{"perkotaan", "luar_kota", "bebas_hambatan", "12_kelas"}
-	KlasifikasiOptions   = []string{"perkotaan", "luar_kota", "bebas_hambatan", "12_kelas"}
 	TipeArahOptions      = []string{"22ud", "42d", "42ud", "62d"}
 	LebarJalurOptions    = []int{5, 6, 7, 8, 9, 10, 11}
 	PersentaseOptions    = []string{"50-50", "55-45", "60-40", "65-35", "70-30"}
@@ -33,7 +32,6 @@ type Location struct {
 	Persentase     string    `bson:"persentase" json:"persentase"`
 	Tipe_hambatan  string    `bson:"tipe_hambatan" json:"tipe_hambatan"`
 	Kelas_hambatan string    `bson:"kelas_hambatan" json:"kelas_hambatan"`
-	Klasifikasi    string    `bson:"klasifikasi" json:"klasifikasi"`
 	Ukuran_kota    float64   `bson:"ukuran_kota" json:"ukuran_kota"`
 	Latitude       float64   `bson:"latitude" json:"latitude"`
 	Longitude      float64   `bson:"longitude" json:"longitude"`
@@ -47,15 +45,6 @@ type Location struct {
 
 func IsValidTipeLokasi(value string) bool {
 	for _, v := range TipeLokasiOptions {
-		if v == value {
-			return true
-		}
-	}
-	return false
-}
-
-func IsValidKlasifikasi(value string) bool {
-	for _, v := range KlasifikasiOptions {
 		if v == value {
 			return true
 		}
