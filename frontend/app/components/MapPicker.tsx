@@ -72,13 +72,29 @@ export default function MapPicker({ locations = [], onMarkerClick }: MapPickerPr
                     key={loc.id} 
                     position={[loc.latitude, loc.longitude]} 
                     icon={customIcon}
-                    eventHandlers={{
-                        click: () => {
-                            if (onMarkerClick) onMarkerClick(loc);
-                        },
-                    }}
                 >
-                    <Popup>{loc.nama_lokasi}</Popup>
+                    <Popup className="custom-popup">
+                        <div className="min-w-[200px] font-sans">
+                            <div className={`${loc.hide_lokasi ? 'bg-red-500' : 'bg-[#00AA13]'} text-white p-3 rounded-t-lg -mx-4 -mt-3 mb-3 flex justify-between items-center`}>
+                                <span className="font-bold text-sm">{loc.hide_lokasi ? "Offline" : "Online"}</span>
+                            </div>
+                            
+                            <h3 className="font-bold text-lg text-gray-800 leading-tight mb-1">{loc.nama_lokasi}</h3>
+                            <p className="text-xs text-gray-500 mb-3">Update: {new Date(loc.timestamp).toLocaleTimeString()}</p>
+                            
+                            <div className="flex justify-end">
+                                {!loc.hide_lokasi ? (
+                                    <a href="/monitoring" className="bg-blue-500 text-white text-xs font-semibold px-3 py-1.5 rounded hover:bg-blue-600 transition-colors no-underline">
+                                        Monitoring
+                                    </a>
+                                ) : (
+                                    <button disabled className="bg-gray-300 text-gray-500 text-xs font-semibold px-3 py-1.5 rounded cursor-not-allowed">
+                                        Monitoring
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </Popup>
                 </Marker>
             ))
         ) : (

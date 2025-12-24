@@ -44,17 +44,13 @@ export default function UserPage() {
     fetchLocations();
   }, [router]);
 
-  const handleMarkerClick = (loc: any) => {
-    setSelectedLocation(loc);
-  };
-
-  const displayedLocations = selectedLocation ? [selectedLocation] : locations;
+  const displayedLocations = locations;
 
   return (
     <main className="min-h-screen flex flex-col bg-gray-100 bg-[url('/images/bg-home.webp')] bg-center">
       <section className="p-6 px-40 flex flex-col">
         <div className="w-full h-[400px] bg-white rounded-xl mb-10 overflow-hidden shadow-md border border-gray-200">
-         <MapWrapper locations={locations} onMarkerClick={handleMarkerClick} />
+         <MapWrapper locations={locations} />
         </div>
         <div className="flex flex-row gap-3 flex-wrap justify-center">
           {loading ? (
