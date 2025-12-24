@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 
-	"backend/config"
 	"backend/database"
 	"backend/models"
 	"backend/utils"
@@ -12,11 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-func main() {
-	cfg := config.Load()
-
-	database.Connect(cfg.MongoURI, cfg.DBName)
-
+func SeedSuperAdmin() {
 	superAdminID := "SAA001"
 	superAdminUsername := "agus"
 	superAdminEmail := "agus@gmail.com"

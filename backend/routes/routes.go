@@ -9,4 +9,5 @@ func Setup(app *fiber.App) {
 	SetupUserRoutes(app)
 	SetupLocationRoutes(app)
 	SetupCameraRoutes(app)
+	SetupKlasifikasiKendaraanRoutes(app)
 }
