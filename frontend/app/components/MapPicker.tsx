@@ -73,26 +73,47 @@ export default function MapPicker({ locations = [], onMarkerClick }: MapPickerPr
                     position={[loc.latitude, loc.longitude]} 
                     icon={customIcon}
                 >
-                    <Popup className="custom-popup">
-                        <div className="min-w-[200px] font-sans">
-                            <div className={`${loc.hide_lokasi ? 'bg-red-500' : 'bg-[#00AA13]'} text-white p-3 rounded-t-lg -mx-4 -mt-3 mb-3 flex justify-between items-center`}>
-                                <span className="font-bold text-sm">{loc.hide_lokasi ? "Offline" : "Online"}</span>
-                            </div>
-                            
-                            <h3 className="font-bold text-lg text-gray-800 leading-tight mb-1">{loc.nama_lokasi}</h3>
-                            <p className="text-xs text-gray-500 mb-3">Update: {new Date(loc.timestamp).toLocaleTimeString()}</p>
-                            
-                            <div className="flex justify-end">
-                                {!loc.hide_lokasi ? (
-                                    <a href="/monitoring" className="bg-blue-500 text-white text-xs font-semibold px-3 py-1.5 rounded hover:bg-blue-600 transition-colors no-underline">
-                                        Monitoring
-                                    </a>
-                                ) : (
-                                    <button disabled className="bg-gray-300 text-gray-500 text-xs font-semibold px-3 py-1.5 rounded cursor-not-allowed">
-                                        Monitoring
-                                    </button>
-                                )}
-                            </div>
+                    <Popup>
+                        <div className="flex flex-col gap-3 min-w-[240px]">
+                           {/* Header */}
+                           <div className="flex items-center justify-between gap-2 border-b pb-2 border-gray-100">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold text-white ${loc.hide_lokasi ? 'bg-red-500' : 'bg-green-600'}`}>
+                                {loc.hide_lokasi ? "OFFLINE" : "ONLINE"}
+                              </span>
+                              <span className="text-[10px] text-gray-400">{new Date(loc.timestamp).toLocaleTimeString()}</span>
+                           </div>
+                           
+                           {/* Title */}
+                           <div>
+                               <h3 className="font-bold text-base text-gray-800 m-0 leading-tight">{loc.nama_lokasi}</h3>
+                               <div className="flex items-baseline mt-1">
+                                    <span className="text-2xl font-bold text-gray-900">0</span>
+                                    <span className="text-xs text-gray-500 ml-1">SMP/jam</span>
+                               </div>
+                           </div>
+
+                           {/* Directions */}
+                           <div className="bg-gray-50 rounded p-2 flex flex-col gap-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs text-gray-600">Arah 1</span>
+                                    <span className="text-xs font-bold text-green-600">LANCAR</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs text-gray-600">Arah 2</span>
+                                    <span className="text-xs font-bold text-green-600">LANCAR</span>
+                                </div>
+                           </div>
+                           
+                           {/* Action */}
+                           <div className="mt-1">
+                             <a 
+                               href={!loc.hide_lokasi ? "/monitoring" : "#"} 
+                               style={{ color: 'white' }}
+                               className={`block w-full text-center text-xs font-bold py-2 rounded !text-white transition-colors no-underline ${!loc.hide_lokasi ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"}`}
+                             >
+                               MONITORING
+                             </a>
+                           </div>
                         </div>
                     </Popup>
                 </Marker>
