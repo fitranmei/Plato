@@ -20,7 +20,6 @@ type LocationRequest struct {
 	Persentase     string  `json:"persentase"`
 	Tipe_hambatan  string  `json:"tipe_hambatan"`
 	Kelas_hambatan string  `json:"kelas_hambatan"`
-	Klasifikasi    string  `json:"klasifikasi"`
 	Ukuran_kota    float64 `json:"ukuran_kota"`
 	Latitude       float64 `json:"latitude"`
 	Longitude      float64 `json:"longitude"`
@@ -38,10 +37,6 @@ func validateLocationRequest(req LocationRequest) (string, bool) {
 
 	if !models.IsValidTipeLokasi(req.Tipe_lokasi) {
 		return "tipe_lokasi tidak valid.", false
-	}
-
-	if req.Klasifikasi != "" && !models.IsValidKlasifikasi(req.Klasifikasi) {
-		return "klasifikasi tidak valid.", false
 	}
 
 	if !models.IsValidTipeArah(req.Tipe_arah) {
@@ -100,7 +95,6 @@ func CreateLocation(c *fiber.Ctx) error {
 		Persentase:     req.Persentase,
 		Tipe_hambatan:  req.Tipe_hambatan,
 		Kelas_hambatan: req.Kelas_hambatan,
-		Klasifikasi:    req.Klasifikasi,
 		Ukuran_kota:    req.Ukuran_kota,
 		Latitude:       req.Latitude,
 		Longitude:      req.Longitude,
@@ -132,10 +126,6 @@ func GetAllLocations(c *fiber.Ctx) error {
 
 	if tipeLokasi := c.Query("tipe_lokasi"); tipeLokasi != "" {
 		filter["tipe_lokasi"] = tipeLokasi
-	}
-
-	if klasifikasi := c.Query("klasifikasi"); klasifikasi != "" {
-		filter["klasifikasi"] = klasifikasi
 	}
 
 	if publik := c.Query("publik"); publik != "" {
@@ -204,7 +194,6 @@ func UpdateLocation(c *fiber.Ctx) error {
 			"persentase":     req.Persentase,
 			"tipe_hambatan":  req.Tipe_hambatan,
 			"kelas_hambatan": req.Kelas_hambatan,
-			"klasifikasi":    req.Klasifikasi,
 			"ukuran_kota":    req.Ukuran_kota,
 			"latitude":       req.Latitude,
 			"longitude":      req.Longitude,
@@ -256,7 +245,6 @@ func DeleteLocation(c *fiber.Ctx) error {
 func GetLocationOptions(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"tipe_lokasi":    models.TipeLokasiOptions,
-		"klasifikasi":    models.KlasifikasiOptions,
 		"tipe_arah":      models.TipeArahOptions,
 		"lebar_jalur":    models.LebarJalurOptions,
 		"persentase":     models.PersentaseOptions,
