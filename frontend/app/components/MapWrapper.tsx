@@ -11,6 +11,6 @@ const DynamicMapPicker = dynamic(() => import('./MapPicker'), {
   ),
 });
 
-export default function MapWrapper() {
-  return <DynamicMapPicker />;
+export default function MapWrapper(props: any) {
+  return <DynamicMapPicker {...props} />;
 }

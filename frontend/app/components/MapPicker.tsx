@@ -1,5 +1,5 @@
 'use client';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -15,15 +15,24 @@ const customIcon = new L.Icon({
     popupAnchor: [1, -34] // Posisi popup di atas icon
 });
 
+interface LocationData {
+    id: string;
+    nama_lokasi: string;
+    latitude: number;
+    longitude: number;
+    [key: string]: any;
+}
+
+interface MapPickerProps {
+    locations?: LocationData[];
+    onMarkerClick?: (loc: LocationData) => void;
+}
+
 function LocationMarker({ position, setPosition }: any) {
-  
-  // Hook 'useMapEvents' adalah cara kita berkomunikasi dengan Peta
   const map = useMapEvents({
     click(e) {
       const { lat, lng } = e.latlng;
-      
       setPosition([lat, lng]);
-      
       console.log(`Koordinat Baru: Lat ${lat}, Lng ${lng}`);
     },
   });
@@ -35,14 +44,20 @@ function LocationMarker({ position, setPosition }: any) {
   );
 }
 
-export default function MapPicker() {
+export default function MapPicker({ locations = [], onMarkerClick }: MapPickerProps) {
   const [position, setPosition] = useState<[number, number]>([-6.8586, 107.9193]);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  if (!hasMounted) return <div className="w-full h-full bg-gray-200 animate-pulse" />;
 
   return (
     <div className="w-full h-full rounded-xl overflow-hidden border border-gray-300 relative z-0">
-      
       <MapContainer 
-        center={position}
+        center={locations.length > 0 ? [locations[0].latitude, locations[0].longitude] : position}
         zoom={13}
         style={{ height: '100%', width: '100%' }}
       >
@@ -51,7 +66,24 @@ export default function MapPicker() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <LocationMarker position={position} setPosition={setPosition} />
+        {locations.length > 0 ? (
+            locations.map((loc) => (
+                <Marker 
+                    key={loc.id} 
+                    position={[loc.latitude, loc.longitude]} 
+                    icon={customIcon}
+                    eventHandlers={{
+                        click: () => {
+                            if (onMarkerClick) onMarkerClick(loc);
+                        },
+                    }}
+                >
+                    <Popup>{loc.nama_lokasi}</Popup>
+                </Marker>
+            ))
+        ) : (
+            <LocationMarker position={position} setPosition={setPosition} />
+        )}
 
       </MapContainer>
     </div>
