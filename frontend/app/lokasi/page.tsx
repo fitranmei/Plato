@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useModalContext } from '../components/ModalContext';
 
 
 const SAMPLE_ROWS = [
@@ -37,6 +38,8 @@ export default function LokasiPage() {
 		visibility: 'private',
 	});
 
+	const { showNotification } = useModalContext();
+
 	function openModal() {
 		setIsModalOpen(true);
 		setStep(1);
@@ -72,6 +75,12 @@ export default function LokasiPage() {
 				newErr[k] = 'Wajib Diisi';
 			}
 		});
+		if (form.laneCount && isNaN(Number(form.laneCount))) {
+			newErr.laneCount = 'Harus berupa angka';
+		}
+		if (form.speedLimit && isNaN(Number(form.speedLimit))) {
+			newErr.speedLimit = 'Harus berupa angka';
+		}
 		setErrors(newErr);
 		return Object.keys(newErr).length === 0;
 	}
@@ -130,7 +139,7 @@ export default function LokasiPage() {
 		};
 		setRows((prevRows) => [...prevRows, newRow]);
 
-		alert('Lokasi berhasil disimpan');
+		showNotification('Lokasi berhasil disimpan');
 		closeModal();
 	}
 
@@ -265,12 +274,12 @@ export default function LokasiPage() {
 										</div>
 										<div>
 											<label>Jumlah Jalur</label>
-											<input name="laneCount" value={form.laneCount} onChange={handleChange} placeholder="Masukkan jumlah jalur" className={`${inputClass} ${errors.laneCount ? 'border-red-600' : ''}`} />
+											<input type="number" name="laneCount" value={form.laneCount} onChange={handleChange} placeholder="Masukkan jumlah jalur" className={`${inputClass} ${errors.laneCount ? 'border-red-600' : ''}`} />
 											{errors.laneCount && <div className="text-red-600 text-sm mt-1">{errors.laneCount}</div>}
 										</div>
 										<div>
 											<label>Batas Kecepatan</label>
-											<input name="speedLimit" value={form.speedLimit} onChange={handleChange} placeholder="Masukkan batas kecepatan" className={`${inputClass} ${errors.speedLimit ? 'border-red-600' : ''}`} />
+											<input type="number" name="speedLimit" value={form.speedLimit} onChange={handleChange} placeholder="Masukkan batas kecepatan" className={`${inputClass} ${errors.speedLimit ? 'border-red-600' : ''}`} />
 											{errors.speedLimit && <div className="text-red-600 text-sm mt-1">{errors.speedLimit}</div>}
 										</div>
 									</div>
@@ -297,17 +306,17 @@ export default function LokasiPage() {
 							<div className="mt-6 flex justify-between">
 								<div>
 									{step > 1 && (
-										<button onClick={prevStep} className="px-4 py-2 bg-gray-200 text-gray-800 rounded">Sebelumnya</button>
+										<button onClick={prevStep} className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Sebelumnya</button>
 									)}
 								</div>
 								<div className="flex gap-2">
 									{step < 3 && (
-										<button onClick={nextStep} className="px-4 py-2 bg-blue-600 text-white rounded">Selanjutnya</button>
+										<button onClick={nextStep} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Selanjutnya</button>
 									)}
 									{step === 3 && (
 										<>
-											<button onClick={closeModal} className="px-4 py-2 bg-gray-200 text-gray-800 rounded">Batal</button>
-											<button onClick={handleSave} className="mt-10 w-full bg-[#24345A] text-white py-3 rounded-lg font-bold text-lg">SIMPAN</button>
+											<button onClick={closeModal} className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Batal</button>
+											<button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold">SIMPAN</button>
 										</>
 									)}
 								</div>

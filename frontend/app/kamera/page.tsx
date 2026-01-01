@@ -15,7 +15,7 @@ type Kamera = {
 };
 
 export default function KameraPage() {
-  const { setIsModalOpen } = useModalContext();
+  const { setIsModalOpen, showNotification } = useModalContext();
 
   // ================= STATE =================
   const [kameras, setKameras] = useState<Kamera[]>([
@@ -67,6 +67,7 @@ export default function KameraPage() {
     });
 
     setShowModal(false);
+    showNotification && showNotification('Kamera berhasil disimpan');
   };
 
   const inputClass =
