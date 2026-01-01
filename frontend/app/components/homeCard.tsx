@@ -3,6 +3,7 @@ import React from 'react';
 import Link from 'next/link';
 
 interface HomeCardProps {
+  id: string;
   location: string; 
   lastUpdate: string;
   status?: 'Online' | 'Offline';
@@ -13,6 +14,7 @@ interface HomeCardProps {
 }
 
 const HomeCard = ({ 
+  id,
   location, 
   lastUpdate, 
   status = 'Online', 
@@ -73,7 +75,7 @@ const HomeCard = ({
           </div>
 
           {isOnline ? (
-            <Link href="/monitoring" className={`font-semibold py-2 px-6 rounded-lg transition-colors shadow-sm bg-blue-500 hover:bg-blue-600 text-white`}>
+            <Link href={`/monitoring/${id}`} className={`font-semibold py-2 px-6 rounded-lg transition-colors shadow-sm bg-blue-500 hover:bg-blue-600 text-white`}>
               Monitoring
             </Link>
           ) : (
