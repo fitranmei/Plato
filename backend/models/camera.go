@@ -12,20 +12,23 @@ import (
 
 var (
 	TipeKameraOptions = []string{"trafficam", "x_stream", "thermicam", "cctv"}
-	ZonaIDOptions     = []int{1, 2, 3, 4, 5, 6, 7, 8}
+	MaxZonaArah       = 8
+	MinZonaArah       = 1
 )
 
+type CameraZonaArah struct {
+	IDZonaArah string `bson:"id_zona_arah" json:"id_zona_arah"`
+	Arah       string `bson:"arah" json:"arah"`
+}
+
 type Camera struct {
-	ID               string `bson:"_id" json:"id"`
-	TipeKamera       string `bson:"tipe_kamera" json:"tipe_kamera"`
-	Arah1            string `bson:"arah_1" json:"arah_1"`
-	IDZonaArah1      int    `bson:"id_zona_arah_1" json:"id_zona_arah_1"`
-	Arah2            string `bson:"arah_2" json:"arah_2"`
-	IDZonaArah2      int    `bson:"id_zona_arah_2" json:"id_zona_arah_2"`
-	LokasiPenempatan string `bson:"lokasi_penempatan" json:"lokasi_penempatan"`
-	APIKey           string `bson:"api_key" json:"api_key"`
-	Keterangan       string `bson:"keterangan" json:"keterangan"`
-	LokasiID         string `bson:"lokasi_id" json:"lokasi_id"`
+	ID               string           `bson:"_id" json:"id"`
+	TipeKamera       string           `bson:"tipe_kamera" json:"tipe_kamera"`
+	ZonaArah         []CameraZonaArah `bson:"zona_arah" json:"zona_arah"`
+	LokasiPenempatan string           `bson:"lokasi_penempatan" json:"lokasi_penempatan"`
+	APIKey           string           `bson:"api_key" json:"api_key"`
+	Keterangan       string           `bson:"keterangan" json:"keterangan"`
+	LokasiID         string           `bson:"lokasi_id" json:"lokasi_id"`
 }
 
 func IsValidTipeKamera(value string) bool {
@@ -37,13 +40,28 @@ func IsValidTipeKamera(value string) bool {
 	return false
 }
 
-func IsValidZonaID(value int) bool {
-	for _, v := range ZonaIDOptions {
-		if v == value {
-			return true
+func ValidateZonaArahList(zonaArahList []CameraZonaArah) (string, bool) {
+	if len(zonaArahList) < MinZonaArah {
+		return "minimal harus ada 1 zona arah", false
+	}
+	if len(zonaArahList) > MaxZonaArah {
+		return "maksimal hanya boleh 8 zona arah", false
+	}
+
+	seenIDs := make(map[string]bool)
+	for i, za := range zonaArahList {
+		if za.Arah == "" {
+			return fmt.Sprintf("zona_arah[%d].arah tidak boleh kosong", i), false
+		}
+		if za.IDZonaArah != "" {
+			if seenIDs[za.IDZonaArah] {
+				return fmt.Sprintf("zona_arah[%d].id_zona_arah duplikat", i), false
+			}
+			seenIDs[za.IDZonaArah] = true
 		}
 	}
-	return false
+
+	return "", true
 }
 
 func NextCameraID() (string, error) {
