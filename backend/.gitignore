@@ -1,4 +1,6 @@
 .env
 
+*.md
+
 go.work
 go.work.sum
