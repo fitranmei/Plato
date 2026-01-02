@@ -27,7 +27,6 @@ func NewTrafficCollectorService() *TrafficCollectorService {
 func (s *TrafficCollectorService) Start() {
 	log.Println("Traffic Collector Service started with per-location intervals")
 
-	// Start collectors for each active location
 	locations, err := s.getActiveLocations()
 	if err != nil {
 		log.Printf("Error getting active locations: %v", err)
@@ -38,15 +37,11 @@ func (s *TrafficCollectorService) Start() {
 		s.startLocationCollector(location)
 	}
 
-	// Monitor for location changes and restart collectors as needed
 	go s.monitorLocationChanges()
-
-	// Monitor inactive locations and set them to non-public
 	go s.monitorInactiveLocations()
 }
 
 func (s *TrafficCollectorService) Stop() {
-	// Stop all location tickers
 	for locationID, ticker := range s.locationTickers {
 		if ticker != nil {
 			ticker.Stop()
@@ -58,14 +53,13 @@ func (s *TrafficCollectorService) Stop() {
 }
 
 func (s *TrafficCollectorService) startLocationCollector(location models.Location) {
-	// Stop existing ticker for this location if any
 	if ticker, exists := s.locationTickers[location.ID]; exists && ticker != nil {
 		ticker.Stop()
 	}
 
 	intervalMinutes := location.Interval
 	if intervalMinutes <= 0 {
-		intervalMinutes = 1 // Default to 1 minute if invalid interval
+		intervalMinutes = 1
 	}
 
 	log.Printf("Starting collector for location %s (%s) with interval: %d minutes",
@@ -75,7 +69,6 @@ func (s *TrafficCollectorService) startLocationCollector(location models.Locatio
 	s.locationTickers[location.ID] = ticker
 
 	go func(loc models.Location, interval int) {
-		// Collect data immediately when starting
 		s.collectTrafficForLocation(loc, interval)
 
 		for {
@@ -91,21 +84,22 @@ func (s *TrafficCollectorService) startLocationCollector(location models.Locatio
 }
 
 func (s *TrafficCollectorService) monitorLocationChanges() {
-	// Check for location changes every 5 minutes
-	monitorTicker := time.NewTicker(5 * time.Minute)
+	monitorTicker := time.NewTicker(1 * time.Minute)
 	defer monitorTicker.Stop()
+
+	lastUpdateTime := make(map[string]time.Time)
 
 	for {
 		select {
 		case <-monitorTicker.C:
-			s.updateLocationCollectors()
+			s.updateLocationCollectorsWithDynamicInterval(lastUpdateTime)
 		case <-s.stopChan:
 			return
 		}
 	}
 }
 
-func (s *TrafficCollectorService) updateLocationCollectors() {
+func (s *TrafficCollectorService) updateLocationCollectorsWithDynamicInterval(lastUpdateTime map[string]time.Time) {
 	locations, err := s.getActiveLocations()
 	if err != nil {
 		log.Printf("Error getting locations for update: %v", err)
@@ -113,21 +107,26 @@ func (s *TrafficCollectorService) updateLocationCollectors() {
 	}
 
 	currentLocationIDs := make(map[string]bool)
+	currentTime := time.Now()
 
-	// Start or update collectors for current locations
 	for _, location := range locations {
 		currentLocationIDs[location.ID] = true
 
-		// Check if location needs new collector or interval change
-		if _, exists := s.locationTickers[location.ID]; !exists {
-			log.Printf("New location detected: %s, starting collector", location.ID)
-			s.startLocationCollector(location)
+		lastUpdate, exists := lastUpdateTime[location.ID]
+		intervalDuration := time.Duration(location.Interval) * time.Minute
+
+		shouldUpdate := !exists || currentTime.Sub(lastUpdate) >= intervalDuration
+
+		if shouldUpdate {
+			if _, collectorExists := s.locationTickers[location.ID]; !collectorExists {
+				log.Printf("New location detected: %s (interval: %d min), starting collector", location.ID, location.Interval)
+				s.startLocationCollector(location)
+			}
+			lastUpdateTime[location.ID] = currentTime
+			log.Printf("Location %s checked/updated (interval: %d min)", location.ID, location.Interval)
 		}
-		// Note: For interval changes, we'd need to compare current vs stored interval
-		// This could be enhanced by storing location metadata
 	}
 
-	// Remove collectors for locations that no longer exist
 	for locationID, ticker := range s.locationTickers {
 		if !currentLocationIDs[locationID] {
 			log.Printf("Location %s no longer active, stopping collector", locationID)
@@ -135,6 +134,7 @@ func (s *TrafficCollectorService) updateLocationCollectors() {
 				ticker.Stop()
 			}
 			delete(s.locationTickers, locationID)
+			delete(lastUpdateTime, locationID)
 		}
 	}
 }
@@ -142,8 +142,9 @@ func (s *TrafficCollectorService) updateLocationCollectors() {
 func (s *TrafficCollectorService) getActiveLocations() ([]models.Location, error) {
 	collection := database.DB.Collection("locations")
 
-	// Only get location with ID "LOC-00001" for testing purposes
-	cursor, err := collection.Find(context.Background(), bson.M{"_id": "LOC-00001"})
+	filter := bson.M{"publik": true}
+
+	cursor, err := collection.Find(context.Background(), filter)
 	if err != nil {
 		return nil, err
 	}
@@ -153,11 +154,21 @@ func (s *TrafficCollectorService) getActiveLocations() ([]models.Location, error
 		return nil, err
 	}
 
-	log.Printf("Filtered active locations (testing): %d locations (only LOC-00001)", len(locations))
+	log.Printf("Active public locations found: %d locations", len(locations))
+	for _, loc := range locations {
+		log.Printf("- %s (%s) - Publik: %v", loc.ID, loc.Nama_lokasi, loc.Publik)
+	}
+
 	return locations, nil
 }
 
 func (s *TrafficCollectorService) collectTrafficForLocation(location models.Location, intervalMinutes int) error {
+	// Generate dummy data only for LOC-00001 (testing purposes)
+	if location.ID != "LOC-00001" {
+		log.Printf("Skipping data generation for location %s (only LOC-00001 gets dummy data)", location.ID)
+		return nil
+	}
+
 	cameras, err := s.getCamerasByLokasiID(location.ID)
 	if err != nil {
 		return err
@@ -175,12 +186,7 @@ func (s *TrafficCollectorService) collectTrafficForLocation(location models.Loca
 
 	zonaArahDataMap := make(map[string]*models.TrafficZonaArahData)
 
-	for i, camera := range cameras {
-		if i > 0 {
-			log.Printf("Skipping data generation for camera %s (testing: only first camera gets data)", camera.ID)
-			continue
-		}
-
+	for _, camera := range cameras {
 		log.Printf("Generating traffic data for camera %s", camera.ID)
 		for _, zonaArah := range camera.ZonaArah {
 			kelasDataList := s.generateTrafficDataForZonaArah(klasifikasiList)
@@ -291,6 +297,7 @@ func (s *TrafficCollectorService) monitorInactiveLocations() {
 	for {
 		select {
 		case <-ticker.C:
+			// nganu berapa lama lokasi tidak aktif
 			err := models.CheckInactiveLocations(10 * time.Minute)
 			if err != nil {
 				log.Printf("Error checking inactive locations: %v", err)
