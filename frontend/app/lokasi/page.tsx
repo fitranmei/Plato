@@ -49,6 +49,10 @@ export default function LokasiPage() {
 
     const [form, setForm] = useState(initialForm);
 
+    // Notification & Confirmation State
+    const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+    const [confirmation, setConfirmation] = useState<{ message: string, onConfirm: () => void } | null>(null);
+
     const inputClass = "w-full mt-2 px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#24345A]/30";
 
     useEffect(() => {
@@ -196,7 +200,7 @@ export default function LokasiPage() {
             setStep(1);
         } catch (error) {
             console.error("Error fetching location details:", error);
-            alert("Gagal mengambil data lokasi");
+            setNotification({ message: "Gagal mengambil data lokasi", type: 'error' });
         }
     }
 
@@ -248,42 +252,46 @@ export default function LokasiPage() {
                 throw new Error(errData.error || 'Gagal menyimpan lokasi');
             }
 
-            alert(`Lokasi berhasil ${editingId ? 'diupdate' : 'disimpan'}`);
+            setNotification({ message: `Lokasi berhasil ${editingId ? 'diupdate' : 'disimpan'}`, type: 'success' });
             closeModal();
             // Refresh data
-            window.location.reload(); 
+            setTimeout(() => window.location.reload(), 1500); 
         } catch (error: any) {
-            alert(error.message);
+            setNotification({ message: error.message, type: 'error' });
         }
     }
 
     async function handleDelete(id: string) {
-        if (!confirm('Apakah Anda yakin ingin menghapus lokasi ini?')) return;
-
-        const token = localStorage.getItem('token');
-        if (!token) {
-            router.push('/login');
-            return;
-        }
-
-        try {
-            const res = await fetch(`/api/locations/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
+        setConfirmation({
+            message: 'Apakah Anda yakin ingin menghapus lokasi ini?',
+            onConfirm: async () => {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    router.push('/login');
+                    return;
                 }
-            });
 
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || 'Gagal menghapus lokasi');
+                try {
+                    const res = await fetch(`/api/locations/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    if (!res.ok) {
+                        const errData = await res.json();
+                        throw new Error(errData.error || 'Gagal menghapus lokasi');
+                    }
+
+                    setNotification({ message: 'Lokasi berhasil dihapus', type: 'success' });
+                    setTimeout(() => window.location.reload(), 1500);
+                } catch (error: any) {
+                    setNotification({ message: error.message, type: 'error' });
+                }
+                setConfirmation(null);
             }
-
-            alert('Lokasi berhasil dihapus');
-            window.location.reload();
-        } catch (error: any) {
-            alert(error.message);
-        }
+        });
     }
 
     return (
@@ -536,6 +544,66 @@ export default function LokasiPage() {
                                         </button>
                                     )}
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Notification Modal */}
+                {notification && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setNotification(null)} />
+                        <div className="bg-white w-[400px] rounded-xl p-6 text-center relative shadow-2xl transform transition-all scale-100">
+                            <div className={`mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-4 ${notification.type === 'success' ? 'bg-green-100' : 'bg-red-100'}`}>
+                                {notification.type === 'success' ? (
+                                    <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                ) : (
+                                    <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                )}
+                            </div>
+                            <h3 className={`text-lg font-bold mb-2 ${notification.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>
+                                {notification.type === 'success' ? 'Berhasil!' : 'Gagal!'}
+                            </h3>
+                            <p className="text-gray-600 mb-6">{notification.message}</p>
+                            <button 
+                                onClick={() => setNotification(null)}
+                                className={`w-full py-3 rounded-lg font-semibold text-white transition-colors ${notification.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+                            >
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Confirmation Modal */}
+                {confirmation && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setConfirmation(null)} />
+                        <div className="bg-white w-[400px] rounded-xl p-6 text-center relative shadow-2xl transform transition-all scale-100">
+                            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-4 bg-yellow-100">
+                                <svg className="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-800 mb-2">Konfirmasi</h3>
+                            <p className="text-gray-600 mb-6">{confirmation.message}</p>
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={() => setConfirmation(null)}
+                                    className="flex-1 py-3 rounded-lg font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 transition-colors"
+                                >
+                                    Batal
+                                </button>
+                                <button 
+                                    onClick={confirmation.onConfirm}
+                                    className="flex-1 py-3 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+                                >
+                                    Ya, Hapus
+                                </button>
                             </div>
                         </div>
                     </div>

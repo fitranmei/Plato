@@ -35,6 +35,7 @@ export default function LoginPage() {
             localStorage.setItem("token", data.token);
             localStorage.setItem("role", data.role);
             localStorage.setItem("username", data.username || username);
+            localStorage.setItem("region", data.region);
 
             // Redirect ke home
             router.push("/home");

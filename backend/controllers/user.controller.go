@@ -87,7 +87,7 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	token, _ := utils.GenerateToken(user.ID, string(user.Role))
+	token, _ := utils.GenerateToken(user.ID, string(user.Role), user.Region)
 
 	activeToken := models.ActiveToken{
 		Token:     token,
@@ -103,6 +103,7 @@ func Login(c *fiber.Ctx) error {
 		"token":    token,
 		"role":     user.Role,
 		"username": user.Username,
+		"region":   user.Region,
 	})
 }
 

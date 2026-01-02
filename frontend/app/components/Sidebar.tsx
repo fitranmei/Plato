@@ -13,6 +13,15 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop, isDark }: 
   const [isDesktopLocal, setIsDesktopLocal] = useState<boolean>(false);
   const desktop = typeof isDesktop === 'boolean' ? isDesktop : isDesktopLocal;
 
+  const [role, setRole] = useState("");
+
+  useEffect(() => {
+    const storedRole = localStorage.getItem("role");
+    if (storedRole) {
+      setRole(storedRole);
+    }
+  }, []);
+
   useEffect(() => {
     if (typeof controlledOpen === 'boolean' || typeof setOpen === 'function') return;
 
@@ -74,29 +83,33 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop, isDark }: 
                 </Link>
               </li>
 
-              <li className="mt-4 mb-2 text-xs font-bold uppercase text-gray-400 px-3 tracking-wider">Manajemen Data</li>
-              <li>
-                <Link href="/lokasi" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/lokasi' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
-                  <MapPin size={20} /> <span>Data Lokasi</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/kamera" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/kamera' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
-                  <Video size={20} /> <span>Data Kamera</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/kendaraan" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/kendaraan' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
-                  <Truck size={20} /> <span>Klasifikasi Kendaraan</span>
-                </Link>
-              </li>
+              {(role === 'admin' || role === 'superadmin') && (
+                <>
+                  <li className="mt-4 mb-2 text-xs font-bold uppercase text-gray-400 px-3 tracking-wider">Manajemen Data</li>
+                  <li>
+                    <Link href="/lokasi" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/lokasi' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
+                      <MapPin size={20} /> <span>Data Lokasi</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/kamera" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/kamera' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
+                      <Video size={20} /> <span>Data Kamera</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/kendaraan" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/kendaraan' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
+                      <Truck size={20} /> <span>Klasifikasi Kendaraan</span>
+                    </Link>
+                  </li>
 
-              <li className="mt-4 mb-2 text-xs font-bold uppercase text-gray-400 px-3 tracking-wider">Manajemen User</li>
-              <li>
-                <Link href="/manajemen-user" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/manajemen-user' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
-                  <Users size={20} /> <span>Data User</span>
-                </Link>
-              </li>
+                  <li className="mt-4 mb-2 text-xs font-bold uppercase text-gray-400 px-3 tracking-wider">Manajemen User</li>
+                  <li>
+                    <Link href="/manajemen-user" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/manajemen-user' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
+                      <Users size={20} /> <span>Data User</span>
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </nav>
         </div>

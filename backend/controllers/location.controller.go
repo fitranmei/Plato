@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -79,6 +81,11 @@ func CreateLocation(c *fiber.Ctx) error {
 
 	userID := c.Locals("user_id").(string)
 
+	var region string
+	if r, ok := c.Locals("region").(string); ok {
+		region = r
+	}
+
 	id, err := models.NextLocationID()
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "gagal membuat id lokasi"})
@@ -87,6 +94,7 @@ func CreateLocation(c *fiber.Ctx) error {
 	location := models.Location{
 		ID:             id,
 		UserID:         userID,
+		Region:         region,
 		Nama_lokasi:    req.Nama_lokasi,
 		Alamat_lokasi:  req.Alamat_lokasi,
 		Tipe_lokasi:    req.Tipe_lokasi,
@@ -120,6 +128,22 @@ func CreateLocation(c *fiber.Ctx) error {
 func GetAllLocations(c *fiber.Ctx) error {
 	filter := bson.M{}
 
+	// Filter by Region
+	if region, ok := c.Locals("region").(string); ok {
+		// Jika region bukan Pusat (case-insensitive), filter berdasarkan region
+		// Trim space untuk menghindari masalah whitespace
+		region = strings.TrimSpace(region)
+		fmt.Printf("DEBUG: User Region: '%s'\n", region) // DEBUG LOG
+		if !strings.EqualFold(region, "Pusat") {
+			filter["region"] = region
+			fmt.Printf("DEBUG: Applying Filter: region=%s\n", region) // DEBUG LOG
+		} else {
+			fmt.Println("DEBUG: User is Pusat, showing all locations") // DEBUG LOG
+		}
+	} else {
+		fmt.Println("DEBUG: No region in token, showing all locations") // DEBUG LOG
+	}
+
 	if userID := c.Query("user_id"); userID != "" {
 		filter["user_id"] = userID
 	}
@@ -140,6 +164,11 @@ func GetAllLocations(c *fiber.Ctx) error {
 	var locations []models.Location
 	if err = cursor.All(context.Background(), &locations); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "gagal parsing data lokasi"})
+	}
+
+	// Ensure locations is not nil for JSON response
+	if locations == nil {
+		locations = []models.Location{}
 	}
 
 	return c.JSON(fiber.Map{
