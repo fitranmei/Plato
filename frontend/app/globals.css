@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Leaflet Popup Overrides */
 .leaflet-popup-content-wrapper {

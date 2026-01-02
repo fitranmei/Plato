@@ -13,7 +13,7 @@ type User = {
 };
 
 export default function ManajemenUserPage() {
-  const { setIsModalOpen } = useModalContext();
+  const { setIsModalOpen, showNotification } = useModalContext();
 
   // ================= STATE =================
   const [users, setUsers] = useState<User[]>([
@@ -76,6 +76,7 @@ export default function ManajemenUserPage() {
     });
 
     setShowModal(false);
+    showNotification && showNotification('User berhasil disimpan');
   };
 
   const inputClass =
