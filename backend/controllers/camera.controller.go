@@ -11,15 +11,12 @@ import (
 )
 
 type CameraRequest struct {
-	TipeKamera       string `json:"tipe_kamera"`
-	Arah1            string `json:"arah_1"`
-	IDZonaArah1      int    `json:"id_zona_arah_1"`
-	Arah2            string `json:"arah_2"`
-	IDZonaArah2      int    `json:"id_zona_arah_2"`
-	LokasiPenempatan string `json:"lokasi_penempatan"`
-	APIKey           string `json:"api_key"`
-	Keterangan       string `json:"keterangan"`
-	LokasiID         string `json:"lokasi_id"`
+	TipeKamera       string                  `json:"tipe_kamera"`
+	ZonaArah         []models.CameraZonaArah `json:"zona_arah"`
+	LokasiPenempatan string                  `json:"lokasi_penempatan"`
+	APIKey           string                  `json:"api_key"`
+	Keterangan       string                  `json:"keterangan"`
+	LokasiID         string                  `json:"lokasi_id"`
 }
 
 func validateCameraRequest(req CameraRequest) (string, bool) {
@@ -31,12 +28,8 @@ func validateCameraRequest(req CameraRequest) (string, bool) {
 		return "tipe_kamera tidak valid", false
 	}
 
-	if req.IDZonaArah1 != 0 && !models.IsValidZonaID(req.IDZonaArah1) {
-		return "id_zona_arah_1 harus antara 1-8", false
-	}
-
-	if req.IDZonaArah2 != 0 && !models.IsValidZonaID(req.IDZonaArah2) {
-		return "id_zona_arah_2 harus antara 1-8", false
+	if errMsg, valid := models.ValidateZonaArahList(req.ZonaArah); !valid {
+		return errMsg, false
 	}
 
 	if req.LokasiID == "" {
@@ -68,13 +61,31 @@ func CreateCamera(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "gagal membuat id kamera"})
 	}
 
+	for i := range req.ZonaArah {
+		idZonaArahCamera := models.GenerateZonaArahCameraID(id, i+1)
+		req.ZonaArah[i].IDZonaArah = idZonaArahCamera
+
+		idZonaArah, err := models.NextZonaArahID()
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": "gagal membuat id zona arah"})
+		}
+
+		zonaArah := models.ZonaArah{
+			ID:               idZonaArah,
+			IDZonaArahCamera: idZonaArahCamera,
+			Nama:             req.ZonaArah[i].Arah,
+		}
+
+		_, err = database.DB.Collection("zona_arah").InsertOne(context.Background(), zonaArah)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": "gagal membuat zona arah"})
+		}
+	}
+
 	camera := models.Camera{
 		ID:               id,
 		TipeKamera:       req.TipeKamera,
-		Arah1:            req.Arah1,
-		IDZonaArah1:      req.IDZonaArah1,
-		Arah2:            req.Arah2,
-		IDZonaArah2:      req.IDZonaArah2,
+		ZonaArah:         req.ZonaArah,
 		LokasiPenempatan: req.LokasiPenempatan,
 		APIKey:           req.APIKey,
 		Keterangan:       req.Keterangan,
@@ -174,13 +185,35 @@ func UpdateCamera(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": errMsg})
 	}
 
+	for _, za := range existingCamera.ZonaArah {
+		database.DB.Collection("zona_arah").DeleteOne(context.Background(), bson.M{"id_zona_arah_camera": za.IDZonaArah})
+	}
+
+	for i := range req.ZonaArah {
+		idZonaArahCamera := models.GenerateZonaArahCameraID(id, i+1)
+		req.ZonaArah[i].IDZonaArah = idZonaArahCamera
+
+		idZonaArah, err := models.NextZonaArahID()
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": "gagal membuat id zona arah"})
+		}
+
+		zonaArah := models.ZonaArah{
+			ID:               idZonaArah,
+			IDZonaArahCamera: idZonaArahCamera,
+			Nama:             req.ZonaArah[i].Arah,
+		}
+
+		_, err = database.DB.Collection("zona_arah").InsertOne(context.Background(), zonaArah)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": "gagal membuat zona arah"})
+		}
+	}
+
 	update := bson.M{
 		"$set": bson.M{
 			"tipe_kamera":       req.TipeKamera,
-			"arah_1":            req.Arah1,
-			"id_zona_arah_1":    req.IDZonaArah1,
-			"arah_2":            req.Arah2,
-			"id_zona_arah_2":    req.IDZonaArah2,
+			"zona_arah":         req.ZonaArah,
 			"lokasi_penempatan": req.LokasiPenempatan,
 			"api_key":           req.APIKey,
 			"keterangan":        req.Keterangan,
@@ -209,6 +242,10 @@ func DeleteCamera(c *fiber.Ctx) error {
 	err := database.DB.Collection("cameras").FindOne(context.Background(), bson.M{"_id": id}).Decode(&existingCamera)
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "kamera tidak ditemukan"})
+	}
+
+	for _, za := range existingCamera.ZonaArah {
+		database.DB.Collection("zona_arah").DeleteOne(context.Background(), bson.M{"id_zona_arah_camera": za.IDZonaArah})
 	}
 
 	_, err = database.DB.Collection("cameras").DeleteOne(context.Background(), bson.M{"_id": id})

@@ -73,46 +73,63 @@ export default function MapPicker({ locations = [], onMarkerClick }: MapPickerPr
                     position={[loc.latitude, loc.longitude]} 
                     icon={customIcon}
                 >
-                    <Popup>
-                        <div className="flex flex-col gap-3 min-w-[240px]">
+                    <Popup minWidth={300} maxWidth={100} className="custom-popup">
+                        <div className="font-sans bg-white rounded-lg overflow-hidden w-full">
                            {/* Header */}
-                           <div className="flex items-center justify-between gap-2 border-b pb-2 border-gray-100">
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold text-white ${loc.hide_lokasi ? 'bg-red-500' : 'bg-green-600'}`}>
-                                {loc.hide_lokasi ? "OFFLINE" : "ONLINE"}
-                              </span>
-                              <span className="text-[10px] text-gray-400">{new Date(loc.timestamp).toLocaleTimeString()}</span>
+                           <div className={`${!loc.hide_lokasi ? 'bg-[#00AA13]' : 'bg-red-500'} px-2 py-1.5 flex justify-between items-start text-white`}>
+                              <div className="font-bold text-sm mt-2">
+                                {!loc.hide_lokasi ? "Online" : "Offline"}
+                              </div>
+                              <div className="text-right pr-6">
+                                <h3 className="text-sm font-bold m-0 leading-tight mt-2">{loc.nama_lokasi}</h3>
+                                <p className="text-[10px] opacity-90 m-0 mt-0.5">Update: {new Date(loc.timestamp).toLocaleTimeString()}</p>
+                              </div>
                            </div>
                            
-                           {/* Title */}
-                           <div>
-                               <h3 className="font-bold text-base text-gray-800 m-0 leading-tight">{loc.nama_lokasi}</h3>
-                               <div className="flex items-baseline mt-1">
-                                    <span className="text-2xl font-bold text-gray-900">0</span>
-                                    <span className="text-xs text-gray-500 ml-1">SMP/jam</span>
-                               </div>
-                           </div>
+                           {/* Body */}
+                           <div className="p-2 flex justify-between items-center gap-1">
+                              {/* Left: Directions */}
+                              <div className="flex flex-col gap-1">
+                                {/* Direction 1 */}
+                                <div className="flex items-center gap-1.5">
+                                  <div className="bg-orange-500 p-1 rounded text-black flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-3 h-3">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+                                    </svg>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] text-gray-500 m-0 leading-none mb-[-4px]">Arah 1</p>
+                                    <p className="text-xs font-bold text-gray-800 m-0 leading-none">LANCAR</p>
+                                  </div>
+                                </div>
+                                {/* Direction 2 */}
+                                <div className="flex items-center gap-1.5">
+                                  <div className="bg-orange-500 p-1 rounded text-black flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-3 h-3">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" />
+                                    </svg>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] text-gray-500 m-0 leading-none mb-[-4px]">Arah 2</p>
+                                    <p className="text-xs font-bold text-gray-800 m-0 leading-none">LANCAR</p>
+                                  </div>
+                                </div>
+                              </div>
 
-                           {/* Directions */}
-                           <div className="bg-gray-50 rounded p-2 flex flex-col gap-2">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-xs text-gray-600">Arah 1</span>
-                                    <span className="text-xs font-bold text-green-600">LANCAR</span>
+                              {/* Right: SMP + Button */}
+                              <div className="flex flex-col items-end gap-1">
+                                <div className="text-right">
+                                  <span className="text-2xl font-bold text-gray-900">0</span>
+                                  <span className="text-gray-500 text-[10px] ml-0.5">SMP/jam</span>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-xs text-gray-600">Arah 2</span>
-                                    <span className="text-xs font-bold text-green-600">LANCAR</span>
-                                </div>
-                           </div>
-                           
-                           {/* Action */}
-                           <div className="mt-1">
-                             <a 
-                               href={!loc.hide_lokasi ? "/monitoring" : "#"} 
-                               style={{ color: 'white' }}
-                               className={`block w-full text-center text-xs font-bold py-2 rounded !text-white transition-colors no-underline ${!loc.hide_lokasi ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"}`}
-                             >
-                               MONITORING
-                             </a>
+                                <a 
+                                  href={!loc.hide_lokasi ? `/monitoring/${loc.id}` : "#"} 
+                                  className={`text-[10px] font-semibold py-1 px-3 rounded transition-colors no-underline ${!loc.hide_lokasi ? "bg-blue-500 text-white hover:bg-blue-600" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
+                                  style={{ color: !loc.hide_lokasi ? 'white' : undefined }}
+                                >
+                                  Monitoring
+                                </a>
+                              </div>
                            </div>
                         </div>
                     </Popup>

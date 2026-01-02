@@ -1,0 +1,29 @@
+package routes
+
+import (
+	"backend/controllers"
+	"backend/middleware"
+
+	"github.com/gofiber/fiber/v2"
+)
+
+func SetupTrafficDataRoutes(router fiber.Router) {
+	traffic := router.Group("/traffic-data")
+	traffic.Use(middleware.Protected())
+
+	traffic.Post("/", controllers.CreateTrafficData)
+	traffic.Get("/", controllers.GetAllTrafficData)
+	traffic.Get("/:id", controllers.GetTrafficDataByID)
+	traffic.Get("/lokasi/:lokasi_id", controllers.GetTrafficDataByLokasiID)
+	traffic.Get("/lokasi/:lokasi_id/latest", controllers.GetLatestTrafficDataByLokasiID)
+	traffic.Delete("/:id", middleware.RestrictTo("superadmin"), controllers.DeleteTrafficData)
+	traffic.Delete("/cleanup", middleware.RestrictTo("superadmin"), controllers.CleanupOldTrafficData)
+
+	archive := router.Group("/traffic-data-archive")
+	archive.Use(middleware.Protected())
+
+	archive.Post("/", middleware.RestrictTo("superadmin"), controllers.ArchiveTrafficData)
+	archive.Get("/", controllers.GetArchivedTrafficData)
+	archive.Get("/years", controllers.GetAvailableArchiveYears)
+	archive.Get("/months", controllers.GetAvailableArchiveMonths)
+}

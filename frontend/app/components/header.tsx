@@ -3,12 +3,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image"; 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useParams } from "next/navigation";
 import { Search, LogOut, ArrowLeft, Menu, MapPin, Video, Truck, Users } from "lucide-react";
 
 export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
+  const params = useParams();
   
   // State dropdown khusus Home
   const [isOpen, setIsOpen] = useState(false);
@@ -22,9 +23,48 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
     pathname?.startsWith('/klasifikasi') || 
     pathname?.startsWith('/manajemen-user');
 
+  const [monitoringTitle, setMonitoringTitle] = useState("TFC - LOADING...");
+
+  useEffect(() => {
+    if (pathname?.startsWith("/monitoring/")) {
+      setMonitoringTitle("Loading...");
+      let id = Array.isArray(params?.id) ? params.id[0] : params?.id;
+      
+      // Fallback: parse pathname if useParams doesn't capture the ID (e.g. if Header is outside the route segment)
+      if (!id) {
+        const parts = pathname.split("/");
+        id = parts[parts.length - 1];
+      }
+
+      if (id) {
+        const fetchLocationName = async () => {
+          try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`http://localhost:8080/locations/${id}`, {
+              headers: {
+                "Authorization": `Bearer ${token}`
+              }
+            });
+            if (res.ok) {
+              const jsonData = await res.json();
+              // Adjust based on API response structure. 
+              // Based on page.tsx: setLocation(jsonData.data); -> location.nama_lokasi
+              if (jsonData.data && jsonData.data.nama_lokasi) {
+                  setMonitoringTitle(jsonData.data.nama_lokasi);
+              }
+            }
+          } catch (e) {
+            console.error("Failed to fetch location name for header", e);
+          }
+        };
+        fetchLocationName();
+      }
+    }
+  }, [pathname, params]);
+
   // Logic Judul Halaman Detail
   let title = "Dashboard";
-  if (pathname?.startsWith("/monitoring")) title = "TFC - Cimayor";
+  if (pathname?.startsWith("/monitoring")) title = monitoringTitle;
 
   const [username, setUsername] = useState("User");
 

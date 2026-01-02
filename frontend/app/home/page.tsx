@@ -61,6 +61,7 @@ export default function UserPage() {
             displayedLocations.map((loc) => (
               <HomeCard 
                 key={loc.id}
+                id={loc.id}
                 location={loc.nama_lokasi}
                 lastUpdate={new Date(loc.timestamp).toLocaleTimeString()}
                 smp={0} // Placeholder, data from backend might not have this yet
