@@ -12,6 +12,7 @@ import (
 )
 
 type LocationRequest struct {
+	Region         string  `json:"region,omitempty"`
 	Nama_lokasi    string  `json:"nama_lokasi"`
 	Alamat_lokasi  string  `json:"alamat_lokasi"`
 	Tipe_lokasi    string  `json:"tipe_lokasi"`
@@ -78,6 +79,20 @@ func CreateLocation(c *fiber.Ctx) error {
 	}
 
 	userID := c.Locals("user_id").(string)
+	userRole := c.Locals("role").(string)
+
+	var user models.User
+	err := database.DB.Collection("users").FindOne(context.Background(), bson.M{"_id": userID}).Decode(&user)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "gagal mengambil data user"})
+	}
+
+	var locationRegion string
+	if userRole == "superadmin" && req.Region != "" {
+		locationRegion = req.Region
+	} else {
+		locationRegion = user.Region
+	}
 
 	id, err := models.NextLocationID()
 	if err != nil {
@@ -85,25 +100,27 @@ func CreateLocation(c *fiber.Ctx) error {
 	}
 
 	location := models.Location{
-		ID:             id,
-		UserID:         userID,
-		Nama_lokasi:    req.Nama_lokasi,
-		Alamat_lokasi:  req.Alamat_lokasi,
-		Tipe_lokasi:    req.Tipe_lokasi,
-		Tipe_arah:      req.Tipe_arah,
-		Lebar_jalur:    req.Lebar_jalur,
-		Persentase:     req.Persentase,
-		Tipe_hambatan:  req.Tipe_hambatan,
-		Kelas_hambatan: req.Kelas_hambatan,
-		Ukuran_kota:    req.Ukuran_kota,
-		Latitude:       req.Latitude,
-		Longitude:      req.Longitude,
-		Zona_waktu:     req.Zona_waktu,
-		Interval:       req.Interval,
-		Publik:         req.Publik,
-		Hide_lokasi:    req.Hide_lokasi,
-		Keterangan:     req.Keterangan,
-		Timestamp:      time.Now(),
+		ID:               id,
+		UserID:           userID,
+		Region:           locationRegion,
+		Nama_lokasi:      req.Nama_lokasi,
+		Alamat_lokasi:    req.Alamat_lokasi,
+		Tipe_lokasi:      req.Tipe_lokasi,
+		Tipe_arah:        req.Tipe_arah,
+		Lebar_jalur:      req.Lebar_jalur,
+		Persentase:       req.Persentase,
+		Tipe_hambatan:    req.Tipe_hambatan,
+		Kelas_hambatan:   req.Kelas_hambatan,
+		Ukuran_kota:      req.Ukuran_kota,
+		Latitude:         req.Latitude,
+		Longitude:        req.Longitude,
+		Zona_waktu:       req.Zona_waktu,
+		Interval:         req.Interval,
+		Publik:           req.Publik,
+		Hide_lokasi:      req.Hide_lokasi,
+		Keterangan:       req.Keterangan,
+		Timestamp:        time.Now(),
+		LastDataReceived: time.Now(),
 	}
 
 	_, err = database.DB.Collection("locations").InsertOne(context.Background(), location)
@@ -119,9 +136,20 @@ func CreateLocation(c *fiber.Ctx) error {
 
 func GetAllLocations(c *fiber.Ctx) error {
 	filter := bson.M{}
+	userRole := c.Locals("role").(string)
+	userID := c.Locals("user_id").(string)
 
-	if userID := c.Query("user_id"); userID != "" {
-		filter["user_id"] = userID
+	if userRole != "superadmin" {
+		var user models.User
+		err := database.DB.Collection("users").FindOne(context.Background(), bson.M{"_id": userID}).Decode(&user)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": "gagal mengambil data user"})
+		}
+		filter["region"] = user.Region
+	}
+
+	if userIDQuery := c.Query("user_id"); userIDQuery != "" {
+		filter["user_id"] = userIDQuery
 	}
 
 	if tipeLokasi := c.Query("tipe_lokasi"); tipeLokasi != "" {
@@ -150,11 +178,24 @@ func GetAllLocations(c *fiber.Ctx) error {
 
 func GetLocationByID(c *fiber.Ctx) error {
 	id := c.Params("id")
+	userRole := c.Locals("role").(string)
+	userID := c.Locals("user_id").(string)
 
 	var location models.Location
 	err := database.DB.Collection("locations").FindOne(context.Background(), bson.M{"_id": id}).Decode(&location)
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "lokasi tidak ditemukan"})
+	}
+
+	if userRole != "superadmin" {
+		var user models.User
+		err := database.DB.Collection("users").FindOne(context.Background(), bson.M{"_id": userID}).Decode(&user)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": "gagal mengambil data user"})
+		}
+		if location.Region != user.Region {
+			return c.Status(403).JSON(fiber.Map{"error": "tidak memiliki akses untuk melihat lokasi ini"})
+		}
 	}
 
 	return c.JSON(fiber.Map{"data": location})
@@ -221,7 +262,6 @@ func UpdateLocation(c *fiber.Ctx) error {
 
 func DeleteLocation(c *fiber.Ctx) error {
 	id := c.Params("id")
-	userID := c.Locals("user_id").(string)
 	userRole := c.Locals("role").(string)
 
 	var existingLocation models.Location
@@ -230,7 +270,7 @@ func DeleteLocation(c *fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{"error": "lokasi tidak ditemukan"})
 	}
 
-	if existingLocation.UserID != userID && userRole != "superadmin" {
+	if userRole != "superadmin" {
 		return c.Status(403).JSON(fiber.Map{"error": "tidak memiliki akses untuk menghapus lokasi ini"})
 	}
 

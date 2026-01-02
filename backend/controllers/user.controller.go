@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"log"
 	"strings"
 	"time"
 
@@ -88,6 +89,11 @@ func Login(c *fiber.Ctx) error {
 	}
 
 	token, _ := utils.GenerateToken(user.ID, string(user.Role))
+
+	_, err = database.DB.Collection("active_tokens").DeleteMany(context.Background(), bson.M{"user_id": user.ID})
+	if err != nil {
+		log.Printf("Warning: Gagal menghapus token aktif untuk user %s: %v", user.ID, err)
+	}
 
 	activeToken := models.ActiveToken{
 		Token:     token,

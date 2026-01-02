@@ -20,10 +20,10 @@ type TrafficKelasDetail struct {
 }
 
 type TrafficZonaArahData struct {
-	IDZonaArahCamera string               `bson:"id_zona_arah_camera" json:"id_zona_arah_camera"`
-	NamaArah         string               `bson:"nama_arah" json:"nama_arah"`
-	KelasData        []TrafficKelasDetail `bson:"kelas_data" json:"kelas_data"`
-	TotalKendaraan   int                  `bson:"total_kendaraan" json:"total_kendaraan"`
+	IDZonaArah     string               `bson:"id_zona_arah" json:"id_zona_arah"`
+	NamaArah       string               `bson:"nama_arah" json:"nama_arah"`
+	KelasData      []TrafficKelasDetail `bson:"kelas_data" json:"kelas_data"`
+	TotalKendaraan int                  `bson:"total_kendaraan" json:"total_kendaraan"`
 }
 
 type TrafficData struct {

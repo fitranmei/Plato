@@ -41,12 +41,15 @@ func GetZonaArahByID(c *fiber.Ctx) error {
 }
 
 func GetZonaArahByCameraID(c *fiber.Ctx) error {
-	idZonaArahCamera := c.Params("id_zona_arah_camera")
+	cameraID := c.Params("camera_id")
 
-	zonaArah, err := models.GetZonaArahByCameraID(idZonaArahCamera)
+	zonaArahList, err := models.GetZonaArahByCameraID(cameraID)
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "zona arah tidak ditemukan"})
 	}
 
-	return c.JSON(fiber.Map{"data": zonaArah})
+	return c.JSON(fiber.Map{
+		"data":  zonaArahList,
+		"count": len(zonaArahList),
+	})
 }

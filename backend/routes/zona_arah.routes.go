@@ -14,5 +14,5 @@ func SetupZonaArahRoutes(router fiber.Router) {
 
 	zonaArah.Get("/", controllers.GetAllZonaArah)
 	zonaArah.Get("/:id", controllers.GetZonaArahByID)
-	zonaArah.Get("/camera/:id_zona_arah_camera", controllers.GetZonaArahByCameraID)
+	zonaArah.Get("/camera/:camera_id", controllers.GetZonaArahByCameraID)
 }
