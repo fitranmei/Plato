@@ -3,12 +3,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image"; 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useParams } from "next/navigation";
 import { Search, LogOut, ArrowLeft, Menu, MapPin, Video, Truck, Users } from "lucide-react";
 
 export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
+  const params = useParams();
   
   // State dropdown khusus Home
   const [isOpen, setIsOpen] = useState(false);
@@ -22,16 +23,60 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
     pathname?.startsWith('/klasifikasi') || 
     pathname?.startsWith('/manajemen-user');
 
+  const [monitoringTitle, setMonitoringTitle] = useState("TFC - LOADING...");
+
+  useEffect(() => {
+    if (pathname?.startsWith("/monitoring/")) {
+      setMonitoringTitle("Loading...");
+      let id = Array.isArray(params?.id) ? params.id[0] : params?.id;
+      
+      // Fallback: parse pathname if useParams doesn't capture the ID (e.g. if Header is outside the route segment)
+      if (!id) {
+        const parts = pathname.split("/");
+        id = parts[parts.length - 1];
+      }
+
+      if (id) {
+        const fetchLocationName = async () => {
+          try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`http://localhost:8080/locations/${id}`, {
+              headers: {
+                "Authorization": `Bearer ${token}`
+              }
+            });
+            if (res.ok) {
+              const jsonData = await res.json();
+              // Adjust based on API response structure. 
+              // Based on page.tsx: setLocation(jsonData.data); -> location.nama_lokasi
+              if (jsonData.data && jsonData.data.nama_lokasi) {
+                  setMonitoringTitle(jsonData.data.nama_lokasi);
+              }
+            }
+          } catch (e) {
+            console.error("Failed to fetch location name for header", e);
+          }
+        };
+        fetchLocationName();
+      }
+    }
+  }, [pathname, params]);
+
   // Logic Judul Halaman Detail
   let title = "Dashboard";
-  if (pathname?.startsWith("/monitoring")) title = "TFC - Cimayor";
+  if (pathname?.startsWith("/monitoring")) title = monitoringTitle;
 
   const [username, setUsername] = useState("User");
+  const [role, setRole] = useState("");
 
   useEffect(() => {
     const storedUsername = localStorage.getItem("username");
+    const storedRole = localStorage.getItem("role");
     if (storedUsername) {
       setUsername(storedUsername);
+    }
+    if (storedRole) {
+      setRole(storedRole);
     }
   }, []);
 
@@ -134,14 +179,18 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
              {/* Dropdown Menu Home */}
              {isOpen && (
                 <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 py-2">
-                    <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">Manajemen Data</div>
-                    <Link href="/lokasi" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-gray-50"><MapPin size={18}/> Lokasi SINDILA</Link>
-                    <Link href="/kamera" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-gray-50"><Video size={18}/> Kamera SINDILA</Link>
-                    <Link href="/kendaraan" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-gray-50"><Truck size={18}/> Klasifikasi Kendaraan</Link>
-                    <div className="my-1 border-t border-gray-100"></div>
-                    <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">Manajemen User</div>
-                    <Link href="/manajemen-user" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-gray-50"><Users size={18}/> Manajemen User</Link>
-                    <div className="my-1 border-t border-gray-100"></div>
+                    {(role === 'admin' || role === 'superadmin') && (
+                      <>
+                        <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">Manajemen Data</div>
+                        <Link href="/lokasi" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-gray-50"><MapPin size={18}/> Lokasi SINDILA</Link>
+                        <Link href="/kamera" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-gray-50"><Video size={18}/> Kamera SINDILA</Link>
+                        <Link href="/kendaraan" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-gray-50"><Truck size={18}/> Klasifikasi Kendaraan</Link>
+                        <div className="my-1 border-t border-gray-100"></div>
+                        <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">Manajemen User</div>
+                        <Link href="/manajemen-user" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-gray-50"><Users size={18}/> Manajemen User</Link>
+                        <div className="my-1 border-t border-gray-100"></div>
+                      </>
+                    )}
                     <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 text-left"><LogOut size={18}/> Logout</button>
                 </div>
              )}

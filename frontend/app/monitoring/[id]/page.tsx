@@ -1,8 +1,9 @@
 
 "use client";
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { useParams, useRouter } from 'next/navigation';
 
 // Bar color mapping for tooltip swatches
 const BAR_COLOR_MAP: Record<string, string> = {
@@ -99,27 +100,109 @@ const barData = [
     { date: '15/12/2025', sumedang: 110, cimalaka: 95 }
 ];
 
+interface Location {
+    id: string;
+    nama_lokasi: string;
+    alamat_lokasi: string;
+    tipe_lokasi: string;
+    // Add other fields as needed
+}
+
 export default function MonitoringPage() {
+    const params = useParams();
+    const [location, setLocation] = useState<Location | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    // Mock Data State
+    const [smpData, setSmpData] = useState({ arah1: 0, arah2: 0 });
+    const [kilometer, setKilometer] = useState(0);
+
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!params.id) return;
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+            router.push('/login');
+            return;
+        }
+
+        console.log("Monitoring Page: ID from params:", params.id);
+
+        const fetchLocation = async () => {
+            try {
+                console.log(`Fetching location from /api/locations/${params.id}`);
+                const res = await fetch(`/api/locations/${params.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                console.log("Fetch response status:", res.status);
+                
+                if (!res.ok) {
+                    const text = await res.text();
+                    console.error("Fetch error body:", text);
+                    throw new Error('Failed to fetch location');
+                }
+                
+                const jsonData = await res.json();
+                console.log("Fetch response json:", jsonData);
+                setLocation(jsonData.data);
+                
+                // Simulate fetching dynamic data
+                setSmpData({ 
+                    arah1: Math.floor(Math.random() * 200) + 50, 
+                    arah2: Math.floor(Math.random() * 200) + 50 
+                });
+                setKilometer(Math.floor(Math.random() * 10) + 5);
+
+            } catch (error) {
+                console.error("Error fetching location:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchLocation();
+    }, [params.id, router]);
+
+    if (loading) {
+        return <div className="min-h-screen bg-[#1E293B] text-white flex items-center justify-center">Loading Monitoring Data...</div>;
+    }
+
+    if (!location) {
+        return (
+            <div className="min-h-screen bg-[#1E293B] text-white flex flex-col items-center justify-center gap-4">
+                <div className="text-xl font-bold">Location not found.</div>
+                <div className="text-gray-400">Requested ID: {params.id}</div>
+                <div className="text-sm text-gray-500">Check console for details.</div>
+                <a href="/lokasi" className="text-blue-400 hover:underline">Back to Locations</a>
+            </div>
+        );
+    }
+
     return (
         <main className="min-h-screen bg-[#1E293B] text-white font-sans pb-10">
 
             <div className="p-6 max-w-7xl mx-auto flex flex-col gap-8 transform scale-90 origin-top">
+                
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="flex flex-col gap-6">
                         <DetailCard
                             headerColor="bg-[#D1F232]"
-                            direction="Arah ke Sumedang Kota"
+                            direction="Arah 1"
                             status="PADAT"
                             textColor="text-black"
-                            speed={100}
+                            speed={Math.floor(Math.random() * 60) + 40}
                         />
 
                         <DetailCard
                             headerColor="bg-[#FAFF00]"
-                            direction="Arah ke Cimalaka"
+                            direction="Arah 2"
                             status="NORMAL"
                             textColor="text-black"
-                            speed={80}
+                            speed={Math.floor(Math.random() * 60) + 60}
                         />
 
                         <button className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 shadow-lg transition">
@@ -132,9 +215,9 @@ export default function MonitoringPage() {
 
                     <div className="bg-white rounded-xl shadow-lg h-full min-h-[400px] flex flex-col justify-end p-4 relative">
                         <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                            <span className="text-xl font-semibold">Live Camera Feed</span>
+                            <span className="text-xl font-semibold">Live Camera Feed (ID: {location.id})</span>
                         </div>
-                        <p className="text-right text-gray-600 text-sm relative z-10">Update Terakhir: 19:00:02</p>
+                        <p className="text-right text-gray-600 text-sm relative z-10">Update Terakhir: {new Date().toLocaleTimeString()}</p>
                     </div>
                 </div>
 
@@ -143,8 +226,8 @@ export default function MonitoringPage() {
                 <div className="text-center">
                     <h2 className="text-xl font-bold mb-6 flex items-center justify-center gap-2">ARUS KENDARAAN</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <SimpleStats direction="Arah ke Sumedang Kota" count={80} />
-                        <SimpleStats direction="Arah ke Cimalaka" count={80} />
+                        <SimpleStats direction="Arah 1" count={smpData.arah1} />
+                        <SimpleStats direction="Arah 2" count={smpData.arah2} />
                     </div>
                 </div>
 
@@ -179,7 +262,7 @@ export default function MonitoringPage() {
                                                         <div style={{ background: '#fff', padding: '10px 14px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
                                                             <div style={{ width: 14, height: 14, background: pieColors[1], borderRadius: 3 }} />
                                                             <div style={{ color: '#0f172a', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                                <span>Arah ke Sumedang Kota</span>
+                                                                <span>Arah 1</span>
                                                                 <span style={{ background: '#0f172a', color: '#fff', padding: '4px 8px', borderRadius: 8, fontWeight: 700, fontSize: 12 }}>{PIE_PERCENTS[1]}%</span>
                                                             </div>
                                                         </div>
@@ -190,7 +273,7 @@ export default function MonitoringPage() {
                                                         <div style={{ background: '#fff', padding: '10px 14px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
                                                             <div style={{ width: 14, height: 14, background: pieColors[0], borderRadius: 3 }} />
                                                             <div style={{ color: '#0f172a', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                                <span>Arah ke Cimalaka</span>
+                                                                <span>Arah 2</span>
                                                                 <span style={{ background: '#0f172a', color: '#fff', padding: '4px 8px', borderRadius: 8, fontWeight: 700, fontSize: 12 }}>{PIE_PERCENTS[0]}%</span>
                                                             </div>
                                                         </div>
@@ -206,18 +289,18 @@ export default function MonitoringPage() {
                             <YAxis />
                             <Tooltip content={<CustomBarTooltip />} cursor={{ fill: 'rgba(255,255,255,0.06)' }} />
                             <Legend wrapperStyle={{ color: '#ffffff' }} />
-                            <Bar dataKey="sumedang" fill="#5EB5C4" name="Sumedang Kota" />
-                            <Bar dataKey="cimalaka" fill="#E5E7EB" name="Cimalaka" />
+                            <Bar dataKey="sumedang" fill="#5EB5C4" name="Arah 1" />
+                            <Bar dataKey="cimalaka" fill="#E5E7EB" name="Arah 2" />
                         </BarChart>
                     </div>
                 </div>
 
                 {/* Placeholder graphs */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                    <PlaceholderGraph title="Grafik Volume Kendaraan Arah ke Sumedang Kota" color="bg-[#5EB5C4]" />
-                    <PlaceholderGraph title="Grafik Volume Kendaraan Arah ke Cimalaka" color="bg-[#5EB5C4]" />
-                    <PlaceholderGraph title="Grafik Kecepatan Rata-Rata Kendaraan Arah ke Sumedang Kota" color="bg-[#5EB5C4]" />
-                    <PlaceholderGraph title="Grafik Kecepatan Rata-Rata Kendaraan Arah ke Cimalaka" color="bg-[#5EB5C4]" />
+                    <PlaceholderGraph title="Grafik Volume Kendaraan Arah 1" color="bg-[#5EB5C4]" />
+                    <PlaceholderGraph title="Grafik Volume Kendaraan Arah 2" color="bg-[#5EB5C4]" />
+                    <PlaceholderGraph title="Grafik Kecepatan Rata-Rata Kendaraan Arah 1" color="bg-[#5EB5C4]" />
+                    <PlaceholderGraph title="Grafik Kecepatan Rata-Rata Kendaraan Arah 2" color="bg-[#5EB5C4]" />
                 </div>
             </div>
         </main>
@@ -242,11 +325,11 @@ function DetailCard({ headerColor, textColor, direction, status, speed }: any) {
             </div>
             <div className="p-4">
                 <div className="flex justify-between mb-4 border-b pt-4 pb-15 px-20">
-                    <VehicleIcon label="30" sub="km/jam" type="Motor" />
-                    <VehicleIcon label="30" sub="km/jam" type="Mobil" />
-                    <VehicleIcon label="30" sub="km/jam" type="Truk" />
-                    <VehicleIcon label="30" sub="km/jam" type="Bus" />
-                    <VehicleIcon label="30" sub="km/jam" type="Kontainer" />
+                    <VehicleIcon label={Math.floor(Math.random() * 50) + 10} sub="km/jam" type="Motor" />
+                    <VehicleIcon label={Math.floor(Math.random() * 50) + 10} sub="km/jam" type="Mobil" />
+                    <VehicleIcon label={Math.floor(Math.random() * 50) + 10} sub="km/jam" type="Truk" />
+                    <VehicleIcon label={Math.floor(Math.random() * 50) + 10} sub="km/jam" type="Bus" />
+                    <VehicleIcon label={Math.floor(Math.random() * 50) + 10} sub="km/jam" type="Kontainer" />
                 </div>
                 <div className="text-right">
                     <span className="text-sm font-semibold mr-2">Kecepatan Rata-Rata</span>

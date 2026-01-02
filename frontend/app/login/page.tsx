@@ -35,6 +35,7 @@ export default function LoginPage() {
             localStorage.setItem("token", data.token);
             localStorage.setItem("role", data.role);
             localStorage.setItem("username", data.username || username);
+            localStorage.setItem("region", data.region);
 
             // Redirect ke home
             router.push("/home");
@@ -46,14 +47,16 @@ export default function LoginPage() {
     };
 
     return (
-        <main className="min-h-screen flex flex-col justify-center items-center bg-gray-100 p-8 bg-[url('/images/bg-login.webp')] bg-cover">
-            <div className="flex flex-row">
-                <div className="w-1/2">
-                    <Image src="/images/logo.png" alt="Logo Dishub" width={300} height={300} className="mr-100" />
+        <main className="min-h-screen flex flex-col justify-center items-center bg-gray-100 p-8 bg-[url('/images/bg-login.webp')] bg-cover relative">
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"></div>
+            
+            <div className="flex flex-row items-center justify-center gap-20 w-full max-w-6xl z-10">
+                <div className="flex justify-center">
+                    <Image src="/images/logo.png" alt="Logo Dishub" width={380} height={380} className="object-contain drop-shadow-2xl" />
                 </div>
-                <form onSubmit={handleLogin} className="flex flex-col w-1/2 rounded-lg bg-white p-5">
-                    <h1 className="font-bold text-blue-dark text-2xl text-center mt-5 mb-10">Selamat Datang!</h1>
-                    <span className="mb-2">Silakan isi detail akun anda!</span>
+                <form onSubmit={handleLogin} className="flex flex-col w-[480px] rounded-3xl bg-white p-10 shadow-2xl">
+                    <h1 className="font-bold text-[#24345A] text-3xl text-center mb-2">Selamat Datang!</h1>
+                    <span className="mb-8 text-gray-500 text-center text-sm">Silakan isi detail akun anda!</span>
                     
                     {error && (
                         <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
@@ -61,38 +64,40 @@ export default function LoginPage() {
                         </div>
                     )}
 
-                    <input 
-                        id="username"
-                        type="text" 
-                        placeholder="Username"
-                        className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-800"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        required
-                        disabled={loading}
-                    />
-                    <input 
-                        id="password"
-                        type="password" 
-                        placeholder="Password"
-                        className="w-full px-4 py-3 mt-4 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-800"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        disabled={loading}
-                    />
+                    <div className="space-y-4">
+                        <input 
+                            id="username"
+                            type="text" 
+                            placeholder="Username"
+                            className="w-full px-6 py-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#24345A] focus:ring-2 focus:ring-[#24345A]/20 outline-none transition-all text-gray-800 placeholder-gray-400"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            required
+                            disabled={loading}
+                        />
+                        <input 
+                            id="password"
+                            type="password" 
+                            placeholder="Password"
+                            className="w-full px-6 py-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#24345A] focus:ring-2 focus:ring-[#24345A]/20 outline-none transition-all text-gray-800 placeholder-gray-400"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            disabled={loading}
+                        />
+                    </div>
                     
                     <button
                         type="submit"
                         disabled={loading}
-                        className="mt-4 w-full bg-blue-900 text-white font-semibold py-3 rounded-lg shadow-sm hover:brightness-110 active:brightness-90 focus:ring-2 focus:ring-brand-500 disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="mt-8 w-full bg-[#24345A] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-[#1e2b4a] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed text-lg"
                     >
                         {loading ? "Memuat..." : "Masuk"}
                     </button>
                 </form>
             </div>
-            <div className="absolute bottom-6 w-full text-center">
-                <span className="font-bold text-white text-sm tracking-widest uppercase opacity-80">
+            <div className="absolute bottom-8 w-full text-center z-10">
+                <span className="font-bold text-white text-sm tracking-[0.2em] uppercase opacity-90 drop-shadow-md">
                     DINAS PERHUBUNGAN TRAFFIC CENTER
                 </span>
             </div>    

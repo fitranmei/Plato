@@ -170,6 +170,10 @@ func GetAllLocations(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "gagal parsing data lokasi"})
 	}
 
+	if locations == nil {
+		locations = []models.Location{}
+	}
+
 	return c.JSON(fiber.Map{
 		"data":  locations,
 		"count": len(locations),

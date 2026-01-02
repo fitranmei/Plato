@@ -124,7 +124,6 @@ func NextLocationID() (string, error) {
 	return fmt.Sprintf("LOC-%05d", lastNum+1), nil
 }
 
-// UpdateLastDataReceived updates the last data received timestamp for a location
 func UpdateLastDataReceived(locationID string, dataTimestamp time.Time) error {
 	collection := database.DB.Collection("locations")
 
@@ -138,19 +137,16 @@ func UpdateLastDataReceived(locationID string, dataTimestamp time.Time) error {
 	return err
 }
 
-// CheckInactiveLocations finds locations that haven't received data in the specified duration
-// and sets their Publik field to false
 func CheckInactiveLocations(inactiveDuration time.Duration) error {
 	collection := database.DB.Collection("locations")
 
 	cutoffTime := time.Now().Add(-inactiveDuration)
 
-	// Find locations that are currently public but haven't received data recently
 	filter := bson.M{
 		"publik": true,
 		"$or": []bson.M{
 			{"last_data_received": bson.M{"$lt": cutoffTime}},
-			{"last_data_received": bson.M{"$exists": false}}, // Handle locations without this field
+			{"last_data_received": bson.M{"$exists": false}},
 		},
 	}
 

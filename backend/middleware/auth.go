@@ -34,6 +34,9 @@ func Protected() fiber.Handler {
 
 		c.Locals("user_id", claims["user_id"])
 		c.Locals("role", claims["role"])
+		if region, ok := claims["region"].(string); ok {
+			c.Locals("region", region)
+		}
 
 		return c.Next()
 	}

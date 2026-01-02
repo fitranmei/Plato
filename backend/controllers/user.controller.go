@@ -88,7 +88,7 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	token, _ := utils.GenerateToken(user.ID, string(user.Role))
+	token, _ := utils.GenerateToken(user.ID, string(user.Role), user.Region)
 
 	_, err = database.DB.Collection("active_tokens").DeleteMany(context.Background(), bson.M{"user_id": user.ID})
 	if err != nil {
@@ -109,6 +109,7 @@ func Login(c *fiber.Ctx) error {
 		"token":    token,
 		"role":     user.Role,
 		"username": user.Username,
+		"region":   user.Region,
 	})
 }
 
