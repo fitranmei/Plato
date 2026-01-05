@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	seedType := flag.String("type", "all", "Type of seed to run: 'superadmin', 'klasifikasi', 'region', or 'all'")
+	seedType := flag.String("type", "all", "Type of seed to run: 'superadmin', 'klasifikasi', 'balai', or 'all'")
 	flag.Parse()
 	cfg := config.Load()
 	database.Connect(cfg.MongoURI, cfg.DBName)
@@ -20,16 +20,16 @@ func main() {
 		SeedSuperAdmin()
 	case "klasifikasi":
 		SeedKlasifikasi()
-	case "region":
-		SeedRegion()
+	case "balai":
+		SeedBalai()
 	case "all":
 		fmt.Println("------------------------------------------------")
 		SeedSuperAdmin()
 		SeedKlasifikasi()
-		SeedRegion()
+		SeedBalai()
 		fmt.Println("------------------------------------------------")
 	default:
-		fmt.Println("Invalid seed type. Use 'superadmin', 'klasifikasi', 'region', or 'all'")
+		fmt.Println("Invalid seed type. Use 'superadmin', 'klasifikasi', 'balai', or 'all'")
 		os.Exit(1)
 	}
 }

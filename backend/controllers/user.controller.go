@@ -21,15 +21,15 @@ func Register(c *fiber.Ctx) error {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 		Role     string `json:"role,omitempty"`
-		Region   string `json:"region,omitempty"`
+		Balai    string `json:"balai,omitempty"`
 	}
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "request tidak valid"})
 	}
 
-	if req.Username == "" || req.Email == "" || req.Password == "" || req.Role == "" || req.Region == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "username, email, password, role, dan region diperlukan"})
+	if req.Username == "" || req.Email == "" || req.Password == "" || req.Role == "" || req.Balai == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "username, email, password, role, dan balai diperlukan"})
 	}
 
 	var role models.UserRole = models.RoleUser
@@ -53,7 +53,7 @@ func Register(c *fiber.Ctx) error {
 		Email:    req.Email,
 		Password: utils.HashPassword(req.Password),
 		Role:     role,
-		Region:   req.Region,
+		Balai:    req.Balai,
 	}
 
 	_, err = database.DB.Collection("users").InsertOne(context.Background(), user)
@@ -97,7 +97,7 @@ func Login(c *fiber.Ctx) error {
 		log.Printf("Warning: Gagal mengupdate last login untuk user %s: %v", user.ID, err)
 	}
 
-	token, _ := utils.GenerateToken(user.ID, string(user.Role), user.Region)
+	token, _ := utils.GenerateToken(user.ID, string(user.Role), user.Balai)
 
 	_, err = database.DB.Collection("active_tokens").DeleteMany(context.Background(), bson.M{"user_id": user.ID})
 	if err != nil {
@@ -118,7 +118,7 @@ func Login(c *fiber.Ctx) error {
 		"token":    token,
 		"role":     user.Role,
 		"username": user.Username,
-		"region":   user.Region,
+		"balai":    user.Balai,
 	})
 }
 
@@ -147,13 +147,13 @@ func GetAllUsers(c *fiber.Ctx) error {
 		filter["role"] = role
 	}
 
-	if region := c.Query("region"); region != "" {
-		filter["region"] = region
+	if balai := c.Query("balai"); balai != "" {
+		filter["balai"] = balai
 	}
 
 	findOptions := options.Find()
-	if sort := c.Query("sort"); sort == "region" {
-		findOptions.SetSort(bson.D{{Key: "region", Value: 1}})
+	if sort := c.Query("sort"); sort == "balai" {
+		findOptions.SetSort(bson.D{{Key: "balai", Value: 1}})
 	}
 
 	cursor, err := database.DB.Collection("users").Find(context.Background(), filter, findOptions)

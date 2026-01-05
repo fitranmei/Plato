@@ -28,7 +28,7 @@ type User struct {
 	Email     string    `bson:"email" json:"email"`
 	Password  string    `bson:"password" json:"-"`
 	Role      UserRole  `bson:"role" json:"role"`
-	Region    string    `bson:"region,omitempty" json:"region,omitempty"`
+	Balai     string    `bson:"balai,omitempty" json:"balai,omitempty"`
 	LastLogin time.Time `bson:"last_login,omitempty" json:"last_login,omitempty"`
 }
 

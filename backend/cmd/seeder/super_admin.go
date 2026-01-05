@@ -16,7 +16,7 @@ func SeedSuperAdmin() {
 	superAdminUsername := "agus"
 	superAdminEmail := "agus@gmail.com"
 	superAdminPassword := "Agus123"
-	superAdminRegion := "Pusat"
+	superAdminBalai := "Pusat"
 
 	var existingUser models.User
 	err := database.DB.Collection("users").FindOne(context.Background(), bson.M{"role": models.RoleSuperAdmin}).Decode(&existingUser)
@@ -31,7 +31,7 @@ func SeedSuperAdmin() {
 		Email:    superAdminEmail,
 		Password: utils.HashPassword(superAdminPassword),
 		Role:     models.RoleSuperAdmin,
-		Region:   superAdminRegion,
+		Balai:    superAdminBalai,
 	}
 
 	_, err = database.DB.Collection("users").InsertOne(context.Background(), superAdmin)

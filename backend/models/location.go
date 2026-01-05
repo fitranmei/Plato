@@ -24,7 +24,7 @@ var (
 type Location struct {
 	ID               string    `bson:"_id" json:"id"`
 	UserID           string    `bson:"user_id" json:"user_id"`
-	Region           string    `bson:"region,omitempty" json:"region,omitempty"`
+	Balai            string    `bson:"balai,omitempty" json:"balai,omitempty"`
 	Nama_lokasi      string    `bson:"nama_lokasi" json:"nama_lokasi"`
 	Alamat_lokasi    string    `bson:"alamat_lokasi" json:"alamat_lokasi"`
 	Tipe_lokasi      string    `bson:"tipe_lokasi" json:"tipe_lokasi"`
