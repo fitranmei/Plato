@@ -16,6 +16,7 @@ import (
 type LocationRequest struct {
 	Nama_lokasi    string  `json:"nama_lokasi"`
 	Alamat_lokasi  string  `json:"alamat_lokasi"`
+	Provinsi       string  `json:"provinsi"`
 	Tipe_lokasi    string  `json:"tipe_lokasi"`
 	Tipe_arah      string  `json:"tipe_arah"`
 	Lebar_jalur    int     `json:"lebar_jalur"`
@@ -35,6 +36,14 @@ type LocationRequest struct {
 func validateLocationRequest(req LocationRequest) (string, bool) {
 	if req.Nama_lokasi == "" {
 		return "nama_lokasi diperlukan", false
+	}
+
+	if req.Provinsi == "" {
+		return "provinsi diperlukan", false
+	}
+
+	if !models.IsValidProvinsi(req.Provinsi) {
+		return "provinsi tidak valid.", false
 	}
 
 	if !models.IsValidTipeLokasi(req.Tipe_lokasi) {
@@ -97,6 +106,7 @@ func CreateLocation(c *fiber.Ctx) error {
 		Region:         region,
 		Nama_lokasi:    req.Nama_lokasi,
 		Alamat_lokasi:  req.Alamat_lokasi,
+		Provinsi:       req.Provinsi,
 		Tipe_lokasi:    req.Tipe_lokasi,
 		Tipe_arah:      req.Tipe_arah,
 		Lebar_jalur:    req.Lebar_jalur,
@@ -217,6 +227,7 @@ func UpdateLocation(c *fiber.Ctx) error {
 		"$set": bson.M{
 			"nama_lokasi":    req.Nama_lokasi,
 			"alamat_lokasi":  req.Alamat_lokasi,
+			"provinsi":       req.Provinsi,
 			"tipe_lokasi":    req.Tipe_lokasi,
 			"tipe_arah":      req.Tipe_arah,
 			"lebar_jalur":    req.Lebar_jalur,
@@ -280,5 +291,6 @@ func GetLocationOptions(c *fiber.Ctx) error {
 		"tipe_hambatan":  models.TipeHambatanOptions,
 		"kelas_hambatan": models.KelasHambatanOptions,
 		"interval":       models.IntervalOptions,
+		"provinsi":       models.ProvinsiOptions,
 	})
 }
