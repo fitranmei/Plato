@@ -36,8 +36,8 @@ func validateLocationRequest(req LocationRequest) (string, bool) {
 		return "nama_lokasi diperlukan", false
 	}
 
-	if req.Region == "" {
-		return "region diperlukan", false
+	if req.Balai == "" {
+		return "balai diperlukan", false
 	}
 
 	if !models.IsValidTipeLokasi(req.Tipe_lokasi) {
@@ -237,7 +237,7 @@ func UpdateLocation(c *fiber.Ctx) error {
 		"$set": bson.M{
 			"nama_lokasi":    req.Nama_lokasi,
 			"alamat_lokasi":  req.Alamat_lokasi,
-			"region":         req.Region,
+			"balai":          req.Balai,
 			"tipe_lokasi":    req.Tipe_lokasi,
 			"tipe_arah":      req.Tipe_arah,
 			"lebar_jalur":    req.Lebar_jalur,
