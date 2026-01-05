@@ -19,15 +19,30 @@ var (
 	TipeHambatanOptions  = []string{"bahu_jalan", "kereb"}
 	KelasHambatanOptions = []string{"VL", "L", "M", "H", "VH"}
 	IntervalOptions      = []int{1, 3, 5, 10, 15, 20, 30, 60}
-	ProvinsiOptions      = []string{
-		"Aceh", "Sumatera Utara", "Sumatera Barat", "Riau", "Jambi",
-		"Sumatera Selatan", "Bengkulu", "Lampung", "Kepulauan Bangka Belitung", "Kepulauan Riau",
-		"DKI Jakarta", "Jawa Barat", "Jawa Tengah", "DI Yogyakarta", "Jawa Timur", "Banten",
-		"Bali", "Nusa Tenggara Barat", "Nusa Tenggara Timur",
-		"Kalimantan Barat", "Kalimantan Tengah", "Kalimantan Selatan", "Kalimantan Timur", "Kalimantan Utara",
-		"Sulawesi Utara", "Sulawesi Tengah", "Sulawesi Selatan", "Sulawesi Tenggara", "Gorontalo", "Sulawesi Barat",
-		"Maluku", "Maluku Utara",
-		"Papua", "Papua Barat", "Papua Selatan", "Papua Tengah", "Papua Pegunungan", "Papua Barat Daya",
+	BalaiOptions         = []string{
+		"BPJN-I-Banda-Aceh",
+		"BBPJN-II-Medan",
+		"BBPJN-III-Padang",
+		"BPJN-IV-Jambi",
+		"BBPJN-V-Palembang",
+		"BBPJN-VI-Jakarta",
+		"BBPJN-VII-Semarang",
+		"BBPJN-VIII-Surabaya",
+		"BBPJN-IX-Mataram",
+		"BPJN-X-Kupang",
+		"BBPJN-XI-Banjarmasin",
+		"BBPJN-XII-Balikpapan",
+		"BBPJN-XIII-Makassar",
+		"BPJN-XIV-Palu",
+		"BPJN-XV-Manado",
+		"BPJN-XVI-Ambon",
+		"BPJN-XVII-Manokwari",
+		"BBPJN-XVIII-Jayapura",
+		"Balai-Jembatan-Khusus-dan-Terowongan",
+		"BPJN-XIX-Bandar-Lampung",
+		"BPJN-XX-Pontianak",
+		"BPJN-XXI-Kendari",
+		"BPJN-XXII-Merauke",
 	}
 )
 
@@ -118,8 +133,8 @@ func IsValidInterval(value int) bool {
 	return false
 }
 
-func IsValidProvinsi(value string) bool {
-	for _, v := range ProvinsiOptions {
+func IsValidBalai(value string) bool {
+	for _, v := range BalaiOptions {
 		if v == value {
 			return true
 		}

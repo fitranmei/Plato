@@ -36,8 +36,8 @@ func validateLocationRequest(req LocationRequest) (string, bool) {
 		return "nama_lokasi diperlukan", false
 	}
 
-	if req.Balai == "" {
-		return "balai diperlukan", false
+	if !models.IsValidBalai(req.Balai) {
+		return "balai tidak valid.", false
 	}
 
 	if !models.IsValidTipeLokasi(req.Tipe_lokasi) {
