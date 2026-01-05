@@ -23,11 +23,11 @@ func main() {
 	case "region":
 		SeedRegion()
 	case "all":
+		fmt.Println("------------------------------------------------")
 		SeedSuperAdmin()
-		fmt.Println("--------------------------------")
 		SeedKlasifikasi()
-		fmt.Println("--------------------------------")
 		SeedRegion()
+		fmt.Println("------------------------------------------------")
 	default:
 		fmt.Println("Invalid seed type. Use 'superadmin', 'klasifikasi', 'region', or 'all'")
 		os.Exit(1)
