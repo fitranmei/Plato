@@ -12,7 +12,7 @@ import (
 )
 
 type LocationRequest struct {
-	Balai          string  `json:"balai,omitempty"`
+	Region         string  `json:"region,omitempty"`
 	Nama_lokasi    string  `json:"nama_lokasi"`
 	Alamat_lokasi  string  `json:"alamat_lokasi"`
 	Tipe_lokasi    string  `json:"tipe_lokasi"`
@@ -91,11 +91,11 @@ func CreateLocation(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "gagal mengambil data user"})
 	}
 
-	var locationBalai string
-	if userRole == "superadmin" && req.Balai != "" {
-		locationBalai = req.Balai
+	var locationRegion string
+	if userRole == "superadmin" && req.Region != "" {
+		locationRegion = req.Region
 	} else {
-		locationBalai = user.Balai
+		locationRegion = user.Region
 	}
 
 	id, err := models.NextLocationID()
@@ -106,7 +106,7 @@ func CreateLocation(c *fiber.Ctx) error {
 	location := models.Location{
 		ID:               id,
 		UserID:           userID,
-		Balai:            locationBalai,
+		Region:           locationRegion,
 		Nama_lokasi:      req.Nama_lokasi,
 		Alamat_lokasi:    req.Alamat_lokasi,
 		Tipe_lokasi:      req.Tipe_lokasi,
@@ -149,7 +149,7 @@ func GetAllLocations(c *fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": "gagal mengambil data user"})
 		}
-		filter["balai"] = user.Balai
+		filter["region"] = user.Region
 	}
 
 	if userIDQuery := c.Query("user_id"); userIDQuery != "" {
@@ -201,7 +201,7 @@ func GetLocationByID(c *fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": "gagal mengambil data user"})
 		}
-		if location.Balai != user.Balai {
+		if location.Region != user.Region {
 			return c.Status(403).JSON(fiber.Map{"error": "tidak memiliki akses untuk melihat lokasi ini"})
 		}
 	}

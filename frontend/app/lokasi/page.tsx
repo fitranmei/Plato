@@ -9,8 +9,7 @@ interface Location {
     alamat_lokasi: string;
     latitude: number;
     longitude: number;
-    provinsi: string;
-    region?: string;
+    balai: string;
     keterangan: string;
 }
 
@@ -42,7 +41,7 @@ export default function LokasiPage() {
         // Step 1
         nama_lokasi: '',
         alamat_lokasi: '',
-        provinsi: '',
+        balai: '',
         tipe_lokasi: 'perkotaan',
         latitude: '',
         longitude: '',
@@ -104,7 +103,7 @@ export default function LokasiPage() {
         const filtered = locations.filter((location) => 
             location.nama_lokasi.toLowerCase().includes(searchTerm.toLowerCase()) ||
             location.alamat_lokasi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            location.provinsi.toLowerCase().includes(searchTerm.toLowerCase())
+            location.balai.toLowerCase().includes(searchTerm.toLowerCase())
         );
         setFilteredLocations(filtered);
     }, [searchTerm, locations]);
@@ -121,7 +120,7 @@ export default function LokasiPage() {
     }
 
     function validateStep1() {
-        const required = ['nama_lokasi', 'alamat_lokasi', 'provinsi', 'tipe_lokasi', 'latitude', 'longitude'];
+        const required = ['nama_lokasi', 'alamat_lokasi', 'balai', 'tipe_lokasi', 'latitude', 'longitude'];
         const newErr: Record<string, string> = {};
         required.forEach((k) => {
             if (!form[k as keyof typeof form] || String(form[k as keyof typeof form]).trim() === '') {
@@ -207,7 +206,7 @@ export default function LokasiPage() {
             setForm({
                 nama_lokasi: data.nama_lokasi,
                 alamat_lokasi: data.alamat_lokasi,
-                provinsi: data.region || data.provinsi || '',
+                balai: data.balai,
                 tipe_lokasi: data.tipe_lokasi,
                 latitude: String(data.latitude),
                 longitude: String(data.longitude),
@@ -246,8 +245,7 @@ export default function LokasiPage() {
         const payload = {
             nama_lokasi: form.nama_lokasi,
             alamat_lokasi: form.alamat_lokasi,
-            provinsi: form.provinsi,
-            region: form.provinsi,
+            balai: form.balai,
             tipe_lokasi: form.tipe_lokasi,
             tipe_arah: form.tipe_arah,
             lebar_jalur: parseInt(form.lebar_jalur),
@@ -359,7 +357,7 @@ export default function LokasiPage() {
                                         <th className="px-4 py-3">No</th>
                                         <th className="px-4 py-3">Nama Lokasi</th>
                                         <th className="px-4 py-3">Alamat</th>
-                                        <th className="px-4 py-3">Provinsi</th>
+                                        <th className="px-4 py-3">balai</th>
                                         <th className="px-4 py-3">Latitude</th>
                                         <th className="px-4 py-3">Longitude</th>
                                         <th className="px-4 py-3">Keterangan</th>
@@ -379,7 +377,7 @@ export default function LokasiPage() {
                                                 <td className="px-4 py-3">{index + 1}</td>
                                                 <td className="px-4 py-3 font-medium">{r.nama_lokasi}</td>
                                                 <td className="px-4 py-3">{r.alamat_lokasi}</td>
-                                                <td className="px-4 py-3">{r.provinsi || r.region}</td>
+                                                <td className="px-4 py-3">{r.balai}</td>
                                                 <td className="px-4 py-3">{r.latitude}</td>
                                                 <td className="px-4 py-3">{r.longitude}</td>
                                                 <td className="px-4 py-3">{r.keterangan || '-'}</td>
@@ -451,14 +449,14 @@ export default function LokasiPage() {
 											{errors.alamat_lokasi && <div className="text-red-600 text-xs mt-1">{errors.alamat_lokasi}</div>}
 										</div>
 										<div>
-											<label className="text-sm font-medium">Provinsi</label>
-                                            <select name="provinsi" value={form.provinsi} onChange={handleChange} className={inputClass}>
-                                                <option value="">Pilih Provinsi</option>
+											<label className="text-sm font-medium">balai</label>
+                                            <select name="balai" value={form.balai} onChange={handleChange} className={inputClass}>
+                                                <option value="">Pilih balai</option>
                                                 {provinces.map((prov) => (
                                                     <option key={prov} value={prov}>{prov}</option>
                                                 ))}
                                             </select>
-											{errors.provinsi && <div className="text-red-600 text-xs mt-1">{errors.provinsi}</div>}
+											{errors.balai && <div className="text-red-600 text-xs mt-1">{errors.balai}</div>}
 										</div>
 										<div>
 											<label className="text-sm font-medium">Tipe Lokasi</label>

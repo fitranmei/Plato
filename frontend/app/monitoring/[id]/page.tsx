@@ -199,6 +199,7 @@ export default function MonitoringPage() {
                             status="PADAT"
                             textColor="text-black"
                             speed={Math.floor(Math.random() * 60) + 40}
+                            locationType={location.tipe_lokasi}
                         />
 
                         <DetailCard
@@ -207,6 +208,7 @@ export default function MonitoringPage() {
                             status="NORMAL"
                             textColor="text-black"
                             speed={Math.floor(Math.random() * 60) + 60}
+                            locationType={location.tipe_lokasi}
                         />
 
                         {userRole !== 'user' && (
@@ -313,7 +315,12 @@ export default function MonitoringPage() {
     );
 }
 
-function DetailCard({ headerColor, textColor, direction, status, speed }: any) {
+function DetailCard({ headerColor, textColor, direction, status, speed, locationType }: any) {
+    const is12Classes = locationType === '12_kelas';
+    const vehicles = is12Classes 
+        ? Array.from({ length: 12 }, (_, i) => `Kelas ${i + 1}`)
+        : ["Motor", "Mobil", "Truk", "Bus", "Kontainer"];
+
     return (
         <div className="bg-white rounded-xl overflow-hidden text-gray-800 shadow-lg">
             <div className={`${headerColor} ${textColor} p-3 flex justify-between items-center font-bold`}>
@@ -330,12 +337,10 @@ function DetailCard({ headerColor, textColor, direction, status, speed }: any) {
                 </div>
             </div>
             <div className="p-4">
-                <div className="flex justify-between mb-4 border-b pt-4 pb-15 px-20">
-                    <VehicleIcon label={Math.floor(Math.random() * 50) + 10} sub="km/jam" type="Motor" />
-                    <VehicleIcon label={Math.floor(Math.random() * 50) + 10} sub="km/jam" type="Mobil" />
-                    <VehicleIcon label={Math.floor(Math.random() * 50) + 10} sub="km/jam" type="Truk" />
-                    <VehicleIcon label={Math.floor(Math.random() * 50) + 10} sub="km/jam" type="Bus" />
-                    <VehicleIcon label={Math.floor(Math.random() * 50) + 10} sub="km/jam" type="Kontainer" />
+                <div className={`mb-4 border-b pt-4 pb-4 ${is12Classes ? 'grid grid-cols-6 gap-y-6 gap-x-2' : 'flex justify-between px-4 md:px-10'}`}>
+                    {vehicles.map((v, i) => (
+                        <VehicleIcon key={i} label={Math.floor(Math.random() * 50) + 10} sub="km/jam" type={v} />
+                    ))}
                 </div>
                 <div className="text-right">
                     <span className="text-sm font-semibold mr-2">Kecepatan Rata-Rata</span>
@@ -350,7 +355,12 @@ function DetailCard({ headerColor, textColor, direction, status, speed }: any) {
 function VehicleIcon({ label, sub, type }: any) {
         const key = (type || '').toLowerCase();
         let imageName = 'car.png';
-        if (key.includes('motor')) imageName = 'motor.png';
+        
+        if (key === 'kelas 1') imageName = 'motor.png';
+        else if (key === 'kelas 2' || key === 'kelas 3') imageName = 'car.png';
+        else if (key === 'kelas 4' || key === 'kelas 5') imageName = 'bus.png';
+        else if (key.includes('kelas')) imageName = 'truck.png';
+        else if (key.includes('motor')) imageName = 'motor.png';
         else if (key.includes('mobil') || key.includes('car')) imageName = 'car.png';
         else if (key.includes('truk') || key.includes('truck')) imageName = 'truck.png';
         else if (key.includes('bus')) imageName = 'bus.png';
@@ -358,6 +368,7 @@ function VehicleIcon({ label, sub, type }: any) {
 
         return (
                 <div className="flex flex-col items-center">
+                    <span className="font-bold text-[10px] mb-1 text-center">{type}</span>
                     <Image
                         src={`/images/${imageName}`}
                         alt={type ? `Logo ${type}` : 'vehicle'}
