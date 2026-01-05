@@ -3,33 +3,20 @@ package models
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"backend/database"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type ZonaArah struct {
-	ID               string `bson:"_id" json:"id"`
-	IDZonaArahCamera string `bson:"id_zona_arah_camera" json:"id_zona_arah_camera"`
-	Nama             string `bson:"nama" json:"nama"`
+	ID   string `bson:"_id" json:"id"`
+	Nama string `bson:"nama" json:"nama"`
 }
 
-func NextZonaArahID() (string, error) {
-	collection := database.DB.Collection("zona_arah")
-
-	findOptions := options.FindOne().SetSort(bson.D{{Key: "_id", Value: -1}})
-	var lastZonaArah ZonaArah
-	err := collection.FindOne(context.Background(), bson.M{}, findOptions).Decode(&lastZonaArah)
-
-	if err != nil {
-		return "ZAC_00001", nil
-	}
-
-	var lastNum int
-	fmt.Sscanf(lastZonaArah.ID, "ZAC_%d", &lastNum)
-	return fmt.Sprintf("ZAC_%05d", lastNum+1), nil
+func GenerateZonaArahID(cameraID string, nomor int) string {
+	return fmt.Sprintf("ZA-%s-%d", cameraID, nomor)
 }
 
 func GetZonaArahByID(id string) (*ZonaArah, error) {
@@ -42,26 +29,36 @@ func GetZonaArahByID(id string) (*ZonaArah, error) {
 	return &zonaArah, nil
 }
 
-func GetZonaArahByCameraID(idZonaArahCamera string) (*ZonaArah, error) {
-	collection := database.DB.Collection("zona_arah")
-	var zonaArah ZonaArah
-	err := collection.FindOne(context.Background(), bson.M{"id_zona_arah_camera": idZonaArahCamera}).Decode(&zonaArah)
+func GetZonaArahByCameraID(cameraID string) ([]ZonaArah, error) {
+	// Get camera data first
+	cameraCollection := database.DB.Collection("cameras")
+	var camera Camera
+	err := cameraCollection.FindOne(context.Background(), bson.M{"_id": cameraID}).Decode(&camera)
 	if err != nil {
+		log.Printf("Error finding camera %s: %v", cameraID, err)
 		return nil, err
 	}
-	return &zonaArah, nil
+
+	log.Printf("Found camera %s with %d zona arah", cameraID, len(camera.ZonaArah))
+
+	zonaArahCollection := database.DB.Collection("zona_arah")
+	var zonaArahList []ZonaArah
+
+	for _, cameraZonaArah := range camera.ZonaArah {
+		var zonaArah ZonaArah
+		err := zonaArahCollection.FindOne(context.Background(), bson.M{"_id": cameraZonaArah.IDZonaArah}).Decode(&zonaArah)
+		if err != nil {
+			log.Printf("Warning: zona arah %s not found: %v", cameraZonaArah.IDZonaArah, err)
+			continue
+		}
+		zonaArahList = append(zonaArahList, zonaArah)
+	}
+
+	log.Printf("Retrieved %d zona arah data for camera %s", len(zonaArahList), cameraID)
+	return zonaArahList, nil
 }
 
 func IsZonaArahExists(id string) bool {
 	_, err := GetZonaArahByID(id)
 	return err == nil
-}
-
-func IsZonaArahCameraExists(idZonaArahCamera string) bool {
-	_, err := GetZonaArahByCameraID(idZonaArahCamera)
-	return err == nil
-}
-
-func GenerateZonaArahCameraID(cameraID string, nomor int) string {
-	return fmt.Sprintf("ZA_%s_%d", cameraID, nomor)
 }

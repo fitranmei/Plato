@@ -62,18 +62,12 @@ func CreateCamera(c *fiber.Ctx) error {
 	}
 
 	for i := range req.ZonaArah {
-		idZonaArahCamera := models.GenerateZonaArahCameraID(id, i+1)
-		req.ZonaArah[i].IDZonaArah = idZonaArahCamera
-
-		idZonaArah, err := models.NextZonaArahID()
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": "gagal membuat id zona arah"})
-		}
+		idZonaArah := models.GenerateZonaArahID(id, i+1)
+		req.ZonaArah[i].IDZonaArah = idZonaArah
 
 		zonaArah := models.ZonaArah{
-			ID:               idZonaArah,
-			IDZonaArahCamera: idZonaArahCamera,
-			Nama:             req.ZonaArah[i].Arah,
+			ID:   idZonaArah,
+			Nama: req.ZonaArah[i].Arah,
 		}
 
 		_, err = database.DB.Collection("zona_arah").InsertOne(context.Background(), zonaArah)
@@ -185,23 +179,18 @@ func UpdateCamera(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": errMsg})
 	}
 
-	for _, za := range existingCamera.ZonaArah {
-		database.DB.Collection("zona_arah").DeleteOne(context.Background(), bson.M{"id_zona_arah_camera": za.IDZonaArah})
+	zonaArahList, _ := models.GetZonaArahByCameraID(id)
+	for _, za := range zonaArahList {
+		database.DB.Collection("zona_arah").DeleteOne(context.Background(), bson.M{"_id": za.ID})
 	}
 
 	for i := range req.ZonaArah {
-		idZonaArahCamera := models.GenerateZonaArahCameraID(id, i+1)
-		req.ZonaArah[i].IDZonaArah = idZonaArahCamera
-
-		idZonaArah, err := models.NextZonaArahID()
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": "gagal membuat id zona arah"})
-		}
+		idZonaArah := models.GenerateZonaArahID(id, i+1)
+		req.ZonaArah[i].IDZonaArah = idZonaArah
 
 		zonaArah := models.ZonaArah{
-			ID:               idZonaArah,
-			IDZonaArahCamera: idZonaArahCamera,
-			Nama:             req.ZonaArah[i].Arah,
+			ID:   idZonaArah,
+			Nama: req.ZonaArah[i].Arah,
 		}
 
 		_, err = database.DB.Collection("zona_arah").InsertOne(context.Background(), zonaArah)

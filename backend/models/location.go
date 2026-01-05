@@ -32,27 +32,27 @@ var (
 )
 
 type Location struct {
-	ID             string    `bson:"_id" json:"id"`
-	UserID         string    `bson:"user_id" json:"user_id"`
-	Region         string    `bson:"region" json:"region"`
-	Nama_lokasi    string    `bson:"nama_lokasi" json:"nama_lokasi"`
-	Alamat_lokasi  string    `bson:"alamat_lokasi" json:"alamat_lokasi"`
-	Provinsi       string    `bson:"provinsi" json:"provinsi"`
-	Tipe_lokasi    string    `bson:"tipe_lokasi" json:"tipe_lokasi"`
-	Tipe_arah      string    `bson:"tipe_arah" json:"tipe_arah"`
-	Lebar_jalur    int       `bson:"lebar_jalur" json:"lebar_jalur"`
-	Persentase     string    `bson:"persentase" json:"persentase"`
-	Tipe_hambatan  string    `bson:"tipe_hambatan" json:"tipe_hambatan"`
-	Kelas_hambatan string    `bson:"kelas_hambatan" json:"kelas_hambatan"`
-	Ukuran_kota    float64   `bson:"ukuran_kota" json:"ukuran_kota"`
-	Latitude       float64   `bson:"latitude" json:"latitude"`
-	Longitude      float64   `bson:"longitude" json:"longitude"`
-	Zona_waktu     float64   `bson:"zona_waktu" json:"zona_waktu"`
-	Interval       int       `bson:"interval" json:"interval"`
-	Publik         bool      `bson:"publik" json:"publik"`
-	Hide_lokasi    bool      `bson:"hide_lokasi" json:"hide_lokasi"`
-	Keterangan     string    `bson:"keterangan" json:"keterangan"`
-	Timestamp      time.Time `bson:"timestamp" json:"timestamp"`
+	ID               string    `bson:"_id" json:"id"`
+	UserID           string    `bson:"user_id" json:"user_id"`
+	Region           string    `bson:"region,omitempty" json:"region,omitempty"`
+	Nama_lokasi      string    `bson:"nama_lokasi" json:"nama_lokasi"`
+	Alamat_lokasi    string    `bson:"alamat_lokasi" json:"alamat_lokasi"`
+	Tipe_lokasi      string    `bson:"tipe_lokasi" json:"tipe_lokasi"`
+	Tipe_arah        string    `bson:"tipe_arah" json:"tipe_arah"`
+	Lebar_jalur      int       `bson:"lebar_jalur" json:"lebar_jalur"`
+	Persentase       string    `bson:"persentase" json:"persentase"`
+	Tipe_hambatan    string    `bson:"tipe_hambatan" json:"tipe_hambatan"`
+	Kelas_hambatan   string    `bson:"kelas_hambatan" json:"kelas_hambatan"`
+	Ukuran_kota      float64   `bson:"ukuran_kota" json:"ukuran_kota"`
+	Latitude         float64   `bson:"latitude" json:"latitude"`
+	Longitude        float64   `bson:"longitude" json:"longitude"`
+	Zona_waktu       float64   `bson:"zona_waktu" json:"zona_waktu"`
+	Interval         int       `bson:"interval" json:"interval"`
+	Publik           bool      `bson:"publik" json:"publik"`
+	Hide_lokasi      bool      `bson:"hide_lokasi" json:"hide_lokasi"`
+	Keterangan       string    `bson:"keterangan" json:"keterangan"`
+	Timestamp        time.Time `bson:"timestamp" json:"timestamp"`
+	LastDataReceived time.Time `bson:"last_data_received,omitempty" json:"last_data_received,omitempty"`
 }
 
 func IsValidTipeLokasi(value string) bool {
@@ -141,4 +141,48 @@ func NextLocationID() (string, error) {
 	var lastNum int
 	fmt.Sscanf(lastLocation.ID, "LOC-%d", &lastNum)
 	return fmt.Sprintf("LOC-%05d", lastNum+1), nil
+}
+
+func UpdateLastDataReceived(locationID string, dataTimestamp time.Time) error {
+	collection := database.DB.Collection("locations")
+
+	update := bson.M{
+		"$set": bson.M{
+			"last_data_received": dataTimestamp,
+		},
+	}
+
+	_, err := collection.UpdateOne(context.Background(), bson.M{"_id": locationID}, update)
+	return err
+}
+
+func CheckInactiveLocations(inactiveDuration time.Duration) error {
+	collection := database.DB.Collection("locations")
+
+	cutoffTime := time.Now().Add(-inactiveDuration)
+
+	filter := bson.M{
+		"publik": true,
+		"$or": []bson.M{
+			{"last_data_received": bson.M{"$lt": cutoffTime}},
+			{"last_data_received": bson.M{"$exists": false}},
+		},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"publik": false,
+		},
+	}
+
+	result, err := collection.UpdateMany(context.Background(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.ModifiedCount > 0 {
+		fmt.Printf("Set %d locations to non-public due to inactivity\n", result.ModifiedCount)
+	}
+
+	return nil
 }

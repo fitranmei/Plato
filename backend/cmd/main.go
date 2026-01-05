@@ -33,7 +33,7 @@ func main() {
 	routes.Setup(app)
 
 	trafficCollector := services.NewTrafficCollectorService()
-	trafficCollector.Start(1)
+	trafficCollector.Start()
 
 	go func() {
 		ticker := time.NewTicker(24 * time.Hour)
@@ -55,6 +55,6 @@ func main() {
 	}()
 
 	log.Println("Server running on http://localhost:" + cfg.AppPort)
-	log.Println("Traffic Collector Service is running (interval: 1 minute)")
+	log.Println("Traffic Collector Service is running with per-location intervals")
 	log.Fatal(app.Listen(":" + cfg.AppPort))
 }

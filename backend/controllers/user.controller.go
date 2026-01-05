@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"log"
 	"strings"
 	"time"
 
@@ -87,7 +88,21 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
+	_, err = database.DB.Collection("users").UpdateOne(
+		context.Background(),
+		bson.M{"_id": user.ID},
+		bson.M{"$set": bson.M{"last_login": time.Now()}},
+	)
+	if err != nil {
+		log.Printf("Warning: Gagal mengupdate last login untuk user %s: %v", user.ID, err)
+	}
+
 	token, _ := utils.GenerateToken(user.ID, string(user.Role), user.Region)
+
+	_, err = database.DB.Collection("active_tokens").DeleteMany(context.Background(), bson.M{"user_id": user.ID})
+	if err != nil {
+		log.Printf("Warning: Gagal menghapus token aktif untuk user %s: %v", user.ID, err)
+	}
 
 	activeToken := models.ActiveToken{
 		Token:     token,
