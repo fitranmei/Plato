@@ -2,7 +2,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, AreaChart, Area, LineChart, Line, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { useParams, useRouter } from 'next/navigation';
 
 // Bar color mapping for tooltip swatches
@@ -99,6 +99,15 @@ const barData = [
     { date: '14/12/2025', sumedang: 80, cimalaka: 90 },
     { date: '15/12/2025', sumedang: 110, cimalaka: 95 }
 ];
+
+// Mock Data for Hourly Graphs (00:00 - 23:00)
+const hourlyData = Array.from({ length: 24 }, (_, i) => ({
+    time: `${i.toString().padStart(2, '0')}:00`,
+    vol1: Math.floor(Math.random() * 300) + 50,
+    vol2: Math.floor(Math.random() * 300) + 50,
+    speed1: Math.floor(Math.random() * 40) + 30,
+    speed2: Math.floor(Math.random() * 40) + 30,
+}));
 
 interface Location {
     id: string;
@@ -292,6 +301,7 @@ export default function MonitoringPage() {
                     {/* Bar chart */}
                     <div className="flex flex-col items-center w-full">
                         <h3 className="font-bold text-lg mb-4 text-center">GRAFIK TOTAL JUMLAH<br/>KENDARAAN DUA ARAH PER HARI</h3>
+                        
                         <BarChart width={350} height={300} data={barData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
                             <XAxis dataKey="date" />
                             <YAxis />
@@ -300,18 +310,102 @@ export default function MonitoringPage() {
                             <Bar dataKey="sumedang" fill="#5EB5C4" name="Arah 1" />
                             <Bar dataKey="cimalaka" fill="#E5E7EB" name="Arah 2" />
                         </BarChart>
+
+                        {/* LHR Card */}
+                        <div className="bg-white rounded-xl p-5 mt-6 text-center w-full max-w-sm shadow-lg text-gray-800 border border-gray-100">
+                            <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">LHR Periode Ini</div>
+                            <div className="text-4xl font-extrabold text-[#0f172a] flex items-baseline justify-center gap-2">
+                                {Math.round(barData.reduce((acc, curr) => acc + (curr.sumedang || 0) + (curr.cimalaka || 0), 0) / barData.length).toLocaleString('id-ID')} 
+                                <span className="text-sm text-gray-500 font-bold">SMP/Hari</span>
+                            </div>
+                            <div className="text-[10px] text-gray-400 mt-2 font-medium bg-gray-50 py-1 px-2 rounded-full inline-block">
+                                (Dihitung dari rata-rata tanggal {barData[0].date.substring(0, 5)} s.d. {barData[barData.length - 1].date.substring(0, 5)})
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Placeholder graphs */}
+                {/* SECTION 4: Hourly Graphs */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                    <PlaceholderGraph title="Grafik Volume Kendaraan Arah 1" color="bg-[#5EB5C4]" />
-                    <PlaceholderGraph title="Grafik Volume Kendaraan Arah 2" color="bg-[#5EB5C4]" />
-                    <PlaceholderGraph title="Grafik Kecepatan Rata-Rata Kendaraan Arah 1" color="bg-[#5EB5C4]" />
-                    <PlaceholderGraph title="Grafik Kecepatan Rata-Rata Kendaraan Arah 2" color="bg-[#5EB5C4]" />
+                    {/* Volume Arah 1 */}
+                    <ChartCard title="Grafik Volume Kendaraan Arah 1">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={hourlyData}>
+                                <defs>
+                                    <linearGradient id="colorVol1" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#5EB5C4" stopOpacity={0.8}/>
+                                        <stop offset="95%" stopColor="#5EB5C4" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                <XAxis dataKey="time" style={{ fontSize: 10 }} tickLine={false} axisLine={false} interval={3} />
+                                <YAxis style={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                                <Tooltip contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                <Area type="monotone" dataKey="vol1" stroke="#5EB5C4" fillOpacity={1} fill="url(#colorVol1)" name="Volume" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </ChartCard>
+
+                    {/* Volume Arah 2 */}
+                    <ChartCard title="Grafik Volume Kendaraan Arah 2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={hourlyData}>
+                                <defs>
+                                    <linearGradient id="colorVol2" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#5EB5C4" stopOpacity={0.8}/>
+                                        <stop offset="95%" stopColor="#5EB5C4" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                <XAxis dataKey="time" style={{ fontSize: 10 }} tickLine={false} axisLine={false} interval={3} />
+                                <YAxis style={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                                <Tooltip contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                <Area type="monotone" dataKey="vol2" stroke="#5EB5C4" fillOpacity={1} fill="url(#colorVol2)" name="Volume" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </ChartCard>
+
+                    {/* Speed Arah 1 */}
+                    <ChartCard title="Grafik Kecepatan Rata-Rata Kendaraan Arah 1">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={hourlyData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                <XAxis dataKey="time" style={{ fontSize: 10 }} tickLine={false} axisLine={false} interval={3} />
+                                <YAxis style={{ fontSize: 10 }} tickLine={false} axisLine={false} domain={[0, 100]} />
+                                <Tooltip contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                <Line type="monotone" dataKey="speed1" stroke="#F59E0B" strokeWidth={3} dot={false} name="Kecepatan (km/jam)" />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </ChartCard>
+
+                    {/* Speed Arah 2 */}
+                    <ChartCard title="Grafik Kecepatan Rata-Rata Kendaraan Arah 2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={hourlyData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                <XAxis dataKey="time" style={{ fontSize: 10 }} tickLine={false} axisLine={false} interval={3} />
+                                <YAxis style={{ fontSize: 10 }} tickLine={false} axisLine={false} domain={[0, 100]} />
+                                <Tooltip contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                <Line type="monotone" dataKey="speed2" stroke="#F59E0B" strokeWidth={3} dot={false} name="Kecepatan (km/jam)" />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </ChartCard>
                 </div>
             </div>
         </main>
+    );
+}
+
+function ChartCard({ title, children }: any) {
+    return (
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-80">
+            <div className="bg-[#5EB5C4] p-3 text-white font-bold text-center text-sm">
+                {title}
+            </div>
+            <div className="flex-1 p-4">
+                {children}
+            </div>
+        </div>
     );
 }
 
@@ -397,15 +491,6 @@ function SimpleStats({ direction, count }: any) {
                 <span className="text-4xl font-bold">{count}</span>
                 <span className="text-sm ml-1">SMP/jam</span>
             </div>
-        </div>
-    );
-}
-
-function PlaceholderGraph({ title, color }: any) {
-    return (
-        <div className="rounded-xl overflow-hidden shadow-lg bg-white h-48 flex flex-col">
-            <div className={`${color} p-4 text-center font-bold text-white`}>{title}</div>
-            <div className="flex-1 bg-white"></div>
         </div>
     );
 }

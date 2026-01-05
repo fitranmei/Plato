@@ -357,7 +357,7 @@ export default function LokasiPage() {
                                         <th className="px-4 py-3">No</th>
                                         <th className="px-4 py-3">Nama Lokasi</th>
                                         <th className="px-4 py-3">Alamat</th>
-                                        <th className="px-4 py-3">balai</th>
+                                        <th className="px-4 py-3">Balai</th>
                                         <th className="px-4 py-3">Latitude</th>
                                         <th className="px-4 py-3">Longitude</th>
                                         <th className="px-4 py-3">Keterangan</th>
@@ -449,7 +449,7 @@ export default function LokasiPage() {
 											{errors.alamat_lokasi && <div className="text-red-600 text-xs mt-1">{errors.alamat_lokasi}</div>}
 										</div>
 										<div>
-											<label className="text-sm font-medium">balai</label>
+											<label className="text-sm font-medium">Balai</label>
                                             <select name="balai" value={form.balai} onChange={handleChange} className={inputClass}>
                                                 <option value="">Pilih balai</option>
                                                 {provinces.map((prov) => (
