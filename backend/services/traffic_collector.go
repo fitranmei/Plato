@@ -163,7 +163,6 @@ func (s *TrafficCollectorService) getActiveLocations() ([]models.Location, error
 }
 
 func (s *TrafficCollectorService) collectTrafficForLocation(location models.Location, intervalMinutes int) error {
-	// Generate dummy data only for LOC-00001 (testing purposes)
 	if location.ID != "LOC-00001" {
 		log.Printf("Skipping data generation for location %s (only LOC-00001 gets dummy data)", location.ID)
 		return nil
@@ -298,7 +297,7 @@ func (s *TrafficCollectorService) monitorInactiveLocations() {
 		select {
 		case <-ticker.C:
 			// nganu berapa lama lokasi tidak aktif
-			err := models.CheckInactiveLocations(10 * time.Minute)
+			err := models.CheckInactiveLocations(20 * time.Minute)
 			if err != nil {
 				log.Printf("Error checking inactive locations: %v", err)
 			}

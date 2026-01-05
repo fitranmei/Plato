@@ -34,7 +34,6 @@ func CreateTrafficData(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "zona_arah_data diperlukan"})
 	}
 
-	// Hitung total kendaraan per zona arah
 	for i := range req.ZonaArahData {
 		total := 0
 		for _, kelasData := range req.ZonaArahData[i].KelasData {
@@ -69,7 +68,6 @@ func GetTrafficDataByLokasiID(c *fiber.Ctx) error {
 			return c.Status(400).JSON(fiber.Map{"error": "format start_time tidak valid (gunakan RFC3339)"})
 		}
 	} else {
-		// Default: 24 jam terakhir
 		startTime = time.Now().Add(-24 * time.Hour)
 	}
 
@@ -79,7 +77,6 @@ func GetTrafficDataByLokasiID(c *fiber.Ctx) error {
 			return c.Status(400).JSON(fiber.Map{"error": "format end_time tidak valid (gunakan RFC3339)"})
 		}
 	} else {
-		// Default: sekarang
 		endTime = time.Now()
 	}
 
@@ -119,7 +116,6 @@ func GetTrafficDataByID(c *fiber.Ctx) error {
 }
 
 func GetAllTrafficData(c *fiber.Ctx) error {
-	// Parse query parameters
 	lokasiID := c.Query("lokasi_id")
 	startTimeStr := c.Query("start_time")
 	endTimeStr := c.Query("end_time")
@@ -191,7 +187,6 @@ func DeleteTrafficData(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "traffic data berhasil dihapus"})
 }
 
-// CleanupOldTrafficData membersihkan data traffic yang sudah lama
 func CleanupOldTrafficData(c *fiber.Ctx) error {
 	daysStr := c.Query("days", "30")
 

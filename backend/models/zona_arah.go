@@ -30,7 +30,6 @@ func GetZonaArahByID(id string) (*ZonaArah, error) {
 }
 
 func GetZonaArahByCameraID(cameraID string) ([]ZonaArah, error) {
-	// Get camera data first
 	cameraCollection := database.DB.Collection("cameras")
 	var camera Camera
 	err := cameraCollection.FindOne(context.Background(), bson.M{"_id": cameraID}).Decode(&camera)
