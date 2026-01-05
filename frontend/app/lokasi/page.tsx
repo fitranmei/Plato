@@ -9,12 +9,16 @@ interface Location {
     alamat_lokasi: string;
     latitude: number;
     longitude: number;
+    provinsi: string;
+    region?: string;
     keterangan: string;
 }
 
 export default function LokasiPage() {
     const [locations, setLocations] = useState<Location[]>([]);
+    const [filteredLocations, setFilteredLocations] = useState<Location[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
     const router = useRouter();
 
     // Modal & Form State
@@ -23,10 +27,22 @@ export default function LokasiPage() {
     const [step, setStep] = useState(1);
     const [errors, setErrors] = useState<Record<string, string>>({});
     
+    const provinces = [
+        "Aceh", "Sumatera Utara", "Sumatera Barat", "Riau", "Jambi",
+        "Sumatera Selatan", "Bengkulu", "Lampung", "Kepulauan Bangka Belitung", "Kepulauan Riau",
+        "DKI Jakarta", "Jawa Barat", "Jawa Tengah", "DI Yogyakarta", "Jawa Timur", "Banten",
+        "Bali", "Nusa Tenggara Barat", "Nusa Tenggara Timur",
+        "Kalimantan Barat", "Kalimantan Tengah", "Kalimantan Selatan", "Kalimantan Timur", "Kalimantan Utara",
+        "Sulawesi Utara", "Sulawesi Tengah", "Sulawesi Selatan", "Sulawesi Tenggara", "Gorontalo", "Sulawesi Barat",
+        "Maluku", "Maluku Utara",
+        "Papua", "Papua Barat", "Papua Selatan", "Papua Tengah", "Papua Pegunungan", "Papua Barat Daya",
+    ];
+    
     const initialForm = {
         // Step 1
         nama_lokasi: '',
         alamat_lokasi: '',
+        provinsi: '',
         tipe_lokasi: 'perkotaan',
         latitude: '',
         longitude: '',
@@ -43,7 +59,7 @@ export default function LokasiPage() {
         interval: '15',
 
         // Step 3
-        publik: 'false',
+        publik: 'true',
         hide_lokasi: 'false',
     };
 
@@ -53,7 +69,7 @@ export default function LokasiPage() {
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
     const [confirmation, setConfirmation] = useState<{ message: string, onConfirm: () => void } | null>(null);
 
-    const inputClass = "w-full mt-2 px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#24345A]/30";
+    const inputClass = "w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#24345A]/30 text-sm";
 
     useEffect(() => {
         const fetchLocations = async () => {
@@ -72,6 +88,7 @@ export default function LokasiPage() {
                 if (!res.ok) throw new Error('Failed to fetch data');
                 const jsonData = await res.json();
                 setLocations(jsonData.data || []);
+                setFilteredLocations(jsonData.data || []);
             } catch (error) {
                 console.error("Error fetching locations:", error);
             } finally {
@@ -81,6 +98,16 @@ export default function LokasiPage() {
 
         fetchLocations();
     }, [router]);
+
+    useEffect(() => {
+        // Filter locations based on search term
+        const filtered = locations.filter((location) => 
+            location.nama_lokasi.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            location.alamat_lokasi.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            location.provinsi.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setFilteredLocations(filtered);
+    }, [searchTerm, locations]);
 
     function openModal() {
         setForm(initialForm);
@@ -94,7 +121,7 @@ export default function LokasiPage() {
     }
 
     function validateStep1() {
-        const required = ['nama_lokasi', 'alamat_lokasi', 'tipe_lokasi', 'latitude', 'longitude'];
+        const required = ['nama_lokasi', 'alamat_lokasi', 'provinsi', 'tipe_lokasi', 'latitude', 'longitude'];
         const newErr: Record<string, string> = {};
         required.forEach((k) => {
             if (!form[k as keyof typeof form] || String(form[k as keyof typeof form]).trim() === '') {
@@ -180,6 +207,7 @@ export default function LokasiPage() {
             setForm({
                 nama_lokasi: data.nama_lokasi,
                 alamat_lokasi: data.alamat_lokasi,
+                provinsi: data.region || data.provinsi || '',
                 tipe_lokasi: data.tipe_lokasi,
                 latitude: String(data.latitude),
                 longitude: String(data.longitude),
@@ -218,6 +246,8 @@ export default function LokasiPage() {
         const payload = {
             nama_lokasi: form.nama_lokasi,
             alamat_lokasi: form.alamat_lokasi,
+            provinsi: form.provinsi,
+            region: form.provinsi,
             tipe_lokasi: form.tipe_lokasi,
             tipe_arah: form.tipe_arah,
             lebar_jalur: parseInt(form.lebar_jalur),
@@ -300,6 +330,18 @@ export default function LokasiPage() {
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-2xl font-bold">DATA LOKASI</h1>
                     <div className="flex items-center gap-4">
+                        <div className="relative">
+                            <input 
+                                type="text"
+                                placeholder="Cari lokasi..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="px-4 py-2 rounded-lg bg-white text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 w-64"
+                            />
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 absolute right-3 top-2.5 text-gray-500">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.5 5.5a7.5 7.5 0 0 0 10.5 10.5Z" />
+                            </svg>
+                        </div>
                         <button onClick={openModal} className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg shadow">
                             + Tambah Data Lokasi
                         </button>
@@ -317,6 +359,7 @@ export default function LokasiPage() {
                                         <th className="px-4 py-3">No</th>
                                         <th className="px-4 py-3">Nama Lokasi</th>
                                         <th className="px-4 py-3">Alamat</th>
+                                        <th className="px-4 py-3">Provinsi</th>
                                         <th className="px-4 py-3">Latitude</th>
                                         <th className="px-4 py-3">Longitude</th>
                                         <th className="px-4 py-3">Keterangan</th>
@@ -324,18 +367,19 @@ export default function LokasiPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {locations.length === 0 ? (
+                                    {filteredLocations.length === 0 ? (
                                         <tr>
-                                            <td colSpan={7} className="px-4 py-6 text-center text-gray-500">
+                                            <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
                                                 Tidak ada data lokasi.
                                             </td>
                                         </tr>
                                     ) : (
-                                        locations.map((r, index) => (
+                                        filteredLocations.map((r, index) => (
                                             <tr key={r.id} className="border-t hover:bg-gray-50">
                                                 <td className="px-4 py-3">{index + 1}</td>
                                                 <td className="px-4 py-3 font-medium">{r.nama_lokasi}</td>
                                                 <td className="px-4 py-3">{r.alamat_lokasi}</td>
+                                                <td className="px-4 py-3">{r.provinsi || r.region}</td>
                                                 <td className="px-4 py-3">{r.latitude}</td>
                                                 <td className="px-4 py-3">{r.longitude}</td>
                                                 <td className="px-4 py-3">{r.keterangan || '-'}</td>
@@ -358,36 +402,36 @@ export default function LokasiPage() {
                     )}
                 </div>
 
-                {!loading && locations.length > 0 && (
+                {!loading && filteredLocations.length > 0 && (
                     <div className="mt-4 text-gray-200 text-sm">
-                        Showing {locations.length} entries
+                        Showing {filteredLocations.length} entries
                     </div>
                 )}
 
                 {isModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center">
                         <div className="absolute inset-0 bg-black/60" />
-                        <div className="bg-gray-200 w-[760px] rounded-xl p-8 text-black relative">
+                        <div className="bg-gray-200 w-[600px] rounded-xl p-5 text-black relative">
                             <button 
                                 onClick={closeModal} 
-                                className="absolute top-4 right-4 bg-[#24345A] text-white w-10 h-10 rounded-lg flex items-center justify-center hover:bg-[#1e2b4a] transition-colors font-bold shadow-md text-xl" 
+                                className="absolute top-3 right-3 bg-[#24345A] text-white w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#1e2b4a] transition-colors font-bold shadow-md text-lg" 
                                 title="Tutup"
                             >
                                 ×
                             </button>
-                            <div className="mb-4">
-                                <h2 className="text-2xl font-semibold">{editingId ? 'EDIT DATA LOKASI' : 'TAMBAH DATA LOKASI'}</h2>
+                            <div className="mb-3">
+                                <h2 className="text-xl font-semibold">{editingId ? 'EDIT DATA LOKASI' : 'TAMBAH DATA LOKASI'}</h2>
                                 <div className="flex items-center gap-6 text-sm text-gray-500 mt-2">
                                     <div className="flex items-center gap-2">
-                                        <div className={`flex items-center justify-center w-7 h-7 rounded-full ${step===1? 'bg-[#24345A] text-white font-bold' : 'bg-gray-200 text-gray-600'}`}>1</div>
+                                        <div className={`flex items-center justify-center w-6 h-6 text-xs rounded-full ${step===1? 'bg-[#24345A] text-white font-bold' : 'bg-gray-200 text-gray-600'}`}>1</div>
                                         <span className={`text-xs ${step===1 ? 'font-bold text-[#24345A]' : ''}`}>Identitas Lokasi</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <div className={`flex items-center justify-center w-7 h-7 rounded-full ${step===2? 'bg-[#24345A] text-white font-bold' : 'bg-gray-200 text-gray-600'}`}>2</div>
+                                        <div className={`flex items-center justify-center w-6 h-6 text-xs rounded-full ${step===2? 'bg-[#24345A] text-white font-bold' : 'bg-gray-200 text-gray-600'}`}>2</div>
                                         <span className={`text-xs ${step===2 ? 'font-bold text-[#24345A]' : ''}`}>Karakteristik Jalan</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <div className={`flex items-center justify-center w-7 h-7 rounded-full ${step===3? 'bg-[#24345A] text-white font-bold' : 'bg-gray-200 text-gray-600'}`}>3</div>
+                                        <div className={`flex items-center justify-center w-6 h-6 text-xs rounded-full ${step===3? 'bg-[#24345A] text-white font-bold' : 'bg-gray-200 text-gray-600'}`}>3</div>
                                         <span className={`text-xs ${step===3 ? 'font-bold text-[#24345A]' : ''}`}>Publikasi</span>
                                     </div>
                                 </div>
@@ -395,53 +439,63 @@ export default function LokasiPage() {
 
                             <div>
                                 {step === 1 && (
-                                    <div className="grid grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label>Nama Lokasi</label>
+                                            <label className="text-sm font-medium">Nama Lokasi</label>
                                             <input name="nama_lokasi" value={form.nama_lokasi} onChange={handleChange} placeholder="Masukkan nama lokasi" className={inputClass} />
-                                            {errors.nama_lokasi && <div className="text-red-600 text-sm mt-1">{errors.nama_lokasi}</div>}
+                                            {errors.nama_lokasi && <div className="text-red-600 text-xs mt-1">{errors.nama_lokasi}</div>}
                                         </div>
                                         <div>
-											<label>Alamat Lokasi</label>
+											<label className="text-sm font-medium">Alamat Lokasi</label>
 											<input name="alamat_lokasi" value={form.alamat_lokasi} onChange={handleChange} placeholder="Masukkan alamat lokasi" className={inputClass} />
-											{errors.alamat_lokasi && <div className="text-red-600 text-sm mt-1">{errors.alamat_lokasi}</div>}
+											{errors.alamat_lokasi && <div className="text-red-600 text-xs mt-1">{errors.alamat_lokasi}</div>}
 										</div>
 										<div>
-											<label>Tipe Lokasi</label>
+											<label className="text-sm font-medium">Provinsi</label>
+                                            <select name="provinsi" value={form.provinsi} onChange={handleChange} className={inputClass}>
+                                                <option value="">Pilih Provinsi</option>
+                                                {provinces.map((prov) => (
+                                                    <option key={prov} value={prov}>{prov}</option>
+                                                ))}
+                                            </select>
+											{errors.provinsi && <div className="text-red-600 text-xs mt-1">{errors.provinsi}</div>}
+										</div>
+										<div>
+											<label className="text-sm font-medium">Tipe Lokasi</label>
                                             <select name="tipe_lokasi" value={form.tipe_lokasi} onChange={handleChange} className={inputClass}>
                                                 <option value="perkotaan">Perkotaan</option>
                                                 <option value="luar_kota">Luar Kota</option>
                                                 <option value="bebas_hambatan">Bebas Hambatan</option>
                                                 <option value="12_kelas">12 Kelas</option>
                                             </select>
-											{errors.tipe_lokasi && <div className="text-red-600 text-sm mt-1">{errors.tipe_lokasi}</div>}
+											{errors.tipe_lokasi && <div className="text-red-600 text-xs mt-1">{errors.tipe_lokasi}</div>}
 										</div>
 										<div>
-											<label>Latitude</label>
+											<label className="text-sm font-medium">Latitude</label>
 											<input name="latitude" value={form.latitude} onChange={handleChange} placeholder="Contoh: -6.1234" className={inputClass} />
-											{errors.latitude && <div className="text-red-600 text-sm mt-1">{errors.latitude}</div>}
+											{errors.latitude && <div className="text-red-600 text-xs mt-1">{errors.latitude}</div>}
 										</div>
 										<div>
-											<label>Longitude</label>
+											<label className="text-sm font-medium">Longitude</label>
 											<input name="longitude" value={form.longitude} onChange={handleChange} placeholder="Contoh: 107.1234" className={inputClass} />
-											{errors.longitude && <div className="text-red-600 text-sm mt-1">{errors.longitude}</div>}
+											{errors.longitude && <div className="text-red-600 text-xs mt-1">{errors.longitude}</div>}
 										</div>
 										<div>
-											<label>Zona Waktu (UTC)</label>
+											<label className="text-sm font-medium">Zona Waktu (UTC)</label>
 											<input name="zona_waktu" value={form.zona_waktu} onChange={handleChange} placeholder="Contoh: 7" className={inputClass} />
-                                            {errors.zona_waktu && <div className="text-red-600 text-sm mt-1">{errors.zona_waktu}</div>}
+                                            {errors.zona_waktu && <div className="text-red-600 text-xs mt-1">{errors.zona_waktu}</div>}
 										</div>
 										<div className="col-span-2">
-											<label>Keterangan</label>
-											<textarea name="keterangan" value={form.keterangan} onChange={handleChange} placeholder="Masukkan keterangan tambahan" className={inputClass} />
+											<label className="text-sm font-medium">Keterangan</label>
+											<textarea name="keterangan" value={form.keterangan} onChange={handleChange} placeholder="Masukkan keterangan tambahan" className={`${inputClass} h-20`} />
 										</div>
 									</div>
 								)}
 
 								{step === 2 && (
-									<div className="grid grid-cols-2 gap-6">
+									<div className="grid grid-cols-2 gap-3">
 										<div>
-											<label>Tipe Arah</label>
+											<label className="text-sm font-medium">Tipe Arah</label>
                                             <select name="tipe_arah" value={form.tipe_arah} onChange={handleChange} className={inputClass}>
                                                 <option value="22ud">2/2 UD</option>
                                                 <option value="42d">4/2 D</option>
@@ -450,7 +504,7 @@ export default function LokasiPage() {
                                             </select>
 										</div>
 										<div>
-											<label>Lebar Jalur (meter)</label>
+											<label className="text-sm font-medium">Lebar Jalur (meter)</label>
                                             <select name="lebar_jalur" value={form.lebar_jalur} onChange={handleChange} className={inputClass}>
                                                 {[5, 6, 7, 8, 9, 10, 11].map(v => (
                                                     <option key={v} value={v}>{v}</option>
@@ -458,7 +512,7 @@ export default function LokasiPage() {
                                             </select>
 										</div>
                                         <div>
-											<label>Persentase</label>
+											<label className="text-sm font-medium">Persentase</label>
                                             <select name="persentase" value={form.persentase} onChange={handleChange} className={inputClass}>
                                                 {["50-50", "55-45", "60-40", "65-35", "70-30"].map(v => (
                                                     <option key={v} value={v}>{v}</option>
@@ -466,14 +520,14 @@ export default function LokasiPage() {
                                             </select>
 										</div>
                                         <div>
-											<label>Tipe Hambatan</label>
+											<label className="text-sm font-medium">Tipe Hambatan</label>
                                             <select name="tipe_hambatan" value={form.tipe_hambatan} onChange={handleChange} className={inputClass}>
                                                 <option value="bahu_jalan">Bahu Jalan</option>
                                                 <option value="kereb">Kereb</option>
                                             </select>
 										</div>
 										<div>
-											<label>Kelas Hambatan</label>
+											<label className="text-sm font-medium">Kelas Hambatan</label>
                                             <select name="kelas_hambatan" value={form.kelas_hambatan} onChange={handleChange} className={inputClass}>
                                                 <option value="VL">Very Low (VL)</option>
                                                 <option value="L">Low (L)</option>
@@ -483,12 +537,12 @@ export default function LokasiPage() {
                                             </select>
 										</div>
 										<div>
-											<label>Ukuran Kota (Juta Penduduk)</label>
+											<label className="text-sm font-medium">Ukuran Kota (Juta Penduduk)</label>
 											<input name="ukuran_kota" value={form.ukuran_kota} onChange={handleChange} placeholder="Contoh: 1.5" className={inputClass} />
-                                            {errors.ukuran_kota && <div className="text-red-600 text-sm mt-1">{errors.ukuran_kota}</div>}
+                                            {errors.ukuran_kota && <div className="text-red-600 text-xs mt-1">{errors.ukuran_kota}</div>}
 										</div>
                                         <div>
-											<label>Interval (Menit)</label>
+											<label className="text-sm font-medium">Interval (Menit)</label>
                                             <select name="interval" value={form.interval} onChange={handleChange} className={inputClass}>
                                                 {[1, 3, 5, 10, 15, 20, 30, 60].map(v => (
                                                     <option key={v} value={v}>{v}</option>
@@ -499,16 +553,9 @@ export default function LokasiPage() {
 								)}
 
 								{step === 3 && (
-									<div className="grid grid-cols-2 gap-6">
-										<div>
-											<label>Visibilitas Publik</label>
-											<select name="publik" value={form.publik} onChange={handleChange} className={inputClass}>
-												<option value="false">Private</option>
-												<option value="true">Public</option>
-											</select>
-										</div>
+									<div className="grid grid-cols-1 gap-3">
                                         <div>
-											<label>Sembunyikan Lokasi</label>
+											<label className="text-sm font-medium">Sembunyikan Lokasi</label>
 											<select name="hide_lokasi" value={form.hide_lokasi} onChange={handleChange} className={inputClass}>
 												<option value="false">Tampilkan</option>
 												<option value="true">Sembunyikan</option>
@@ -516,12 +563,12 @@ export default function LokasiPage() {
 										</div>
 									</div>
 								)}
-							</div>                            <div className="mt-8 flex justify-between items-center">
+							</div>                            <div className="mt-5 flex justify-between items-center">
                                 <div>
                                     {step > 1 && (
                                         <button 
                                             onClick={prevStep} 
-                                            className="bg-[#24345A] hover:bg-[#1e2b4a] text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+                                            className="bg-[#24345A] hover:bg-[#1e2b4a] text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors"
                                         >
                                             Sebelumnya
                                         </button>
@@ -531,14 +578,14 @@ export default function LokasiPage() {
                                     {step < 3 ? (
                                         <button 
                                             onClick={nextStep} 
-                                            className="bg-[#24345A] hover:bg-[#1e2b4a] text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+                                            className="bg-[#24345A] hover:bg-[#1e2b4a] text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors"
                                         >
                                             Selanjutnya
                                         </button>
                                     ) : (
                                         <button 
                                             onClick={handleSave} 
-                                            className="bg-[#24345A] hover:bg-[#1e2b4a] text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+                                            className="bg-[#24345A] hover:bg-[#1e2b4a] text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors"
                                         >
                                             Simpan
                                         </button>

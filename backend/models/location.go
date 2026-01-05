@@ -19,6 +19,16 @@ var (
 	TipeHambatanOptions  = []string{"bahu_jalan", "kereb"}
 	KelasHambatanOptions = []string{"VL", "L", "M", "H", "VH"}
 	IntervalOptions      = []int{1, 3, 5, 10, 15, 20, 30, 60}
+	ProvinsiOptions      = []string{
+		"Aceh", "Sumatera Utara", "Sumatera Barat", "Riau", "Jambi",
+		"Sumatera Selatan", "Bengkulu", "Lampung", "Kepulauan Bangka Belitung", "Kepulauan Riau",
+		"DKI Jakarta", "Jawa Barat", "Jawa Tengah", "DI Yogyakarta", "Jawa Timur", "Banten",
+		"Bali", "Nusa Tenggara Barat", "Nusa Tenggara Timur",
+		"Kalimantan Barat", "Kalimantan Tengah", "Kalimantan Selatan", "Kalimantan Timur", "Kalimantan Utara",
+		"Sulawesi Utara", "Sulawesi Tengah", "Sulawesi Selatan", "Sulawesi Tenggara", "Gorontalo", "Sulawesi Barat",
+		"Maluku", "Maluku Utara",
+		"Papua", "Papua Barat", "Papua Selatan", "Papua Tengah", "Papua Pegunungan", "Papua Barat Daya",
+	}
 )
 
 type Location struct {
@@ -101,6 +111,15 @@ func IsValidKelasHambatan(value string) bool {
 
 func IsValidInterval(value int) bool {
 	for _, v := range IntervalOptions {
+		if v == value {
+			return true
+		}
+	}
+	return false
+}
+
+func IsValidProvinsi(value string) bool {
+	for _, v := range ProvinsiOptions {
 		if v == value {
 			return true
 		}

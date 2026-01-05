@@ -116,6 +116,7 @@ export default function MonitoringPage() {
     // Mock Data State
     const [smpData, setSmpData] = useState({ arah1: 0, arah2: 0 });
     const [kilometer, setKilometer] = useState(0);
+    const [userRole, setUserRole] = useState<string | null>(null);
 
     const router = useRouter();
 
@@ -123,6 +124,9 @@ export default function MonitoringPage() {
         if (!params.id) return;
 
         const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+        setUserRole(role);
+
         if (!token) {
             router.push('/login');
             return;
@@ -205,12 +209,14 @@ export default function MonitoringPage() {
                             speed={Math.floor(Math.random() * 60) + 60}
                         />
 
-                        <button className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 shadow-lg transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                            </svg>
-                            Export Data Summary
-                        </button>
+                        {userRole !== 'user' && (
+                            <button className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 shadow-lg transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                </svg>
+                                Export Data Summary
+                            </button>
+                        )}
                     </div>
 
                     <div className="bg-white rounded-xl shadow-lg h-full min-h-[400px] flex flex-col justify-end p-4 relative">
