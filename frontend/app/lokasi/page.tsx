@@ -20,6 +20,13 @@ export default function LokasiPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const router = useRouter();
 
+    useEffect(() => {
+        const role = localStorage.getItem('role');
+        if (role !== 'superadmin') {
+            router.push('/home');
+        }
+    }, [router]);
+
     // Modal & Form State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -27,14 +34,29 @@ export default function LokasiPage() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     
     const provinces = [
-        "Aceh", "Sumatera Utara", "Sumatera Barat", "Riau", "Jambi",
-        "Sumatera Selatan", "Bengkulu", "Lampung", "Kepulauan Bangka Belitung", "Kepulauan Riau",
-        "DKI Jakarta", "Jawa Barat", "Jawa Tengah", "DI Yogyakarta", "Jawa Timur", "Banten",
-        "Bali", "Nusa Tenggara Barat", "Nusa Tenggara Timur",
-        "Kalimantan Barat", "Kalimantan Tengah", "Kalimantan Selatan", "Kalimantan Timur", "Kalimantan Utara",
-        "Sulawesi Utara", "Sulawesi Tengah", "Sulawesi Selatan", "Sulawesi Tenggara", "Gorontalo", "Sulawesi Barat",
-        "Maluku", "Maluku Utara",
-        "Papua", "Papua Barat", "Papua Selatan", "Papua Tengah", "Papua Pegunungan", "Papua Barat Daya",
+        "BPJN-I-Banda-Aceh",
+        "BBPJN-II-Medan",
+        "BBPJN-III-Padang",
+        "BPJN-IV-Jambi",
+        "BBPJN-V-Palembang",
+        "BBPJN-VI-Jakarta",
+        "BBPJN-VII-Semarang",
+        "BBPJN-VIII-Surabaya",
+        "BBPJN-IX-Mataram",
+        "BPJN-X-Kupang",
+        "BBPJN-XI-Banjarmasin",
+        "BBPJN-XII-Balikpapan",
+        "BBPJN-XIII-Makassar",
+        "BPJN-XIV-Palu",
+        "BPJN-XV-Manado",
+        "BPJN-XVI-Ambon",
+        "BPJN-XVII-Manokwari",
+        "BBPJN-XVIII-Jayapura",
+        "Balai-Jembatan-Khusus-dan-Terowongan",
+        "BPJN-XIX-Bandar-Lampung",
+        "BPJN-XX-Pontianak",
+        "BPJN-XXI-Kendari",
+        "BPJN-XXII-Merauke"
     ];
     
     const initialForm = {

@@ -1,5 +1,6 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const KLASIFIKASI = [
   {
@@ -26,6 +27,15 @@ const KLASIFIKASI = [
 ];
 
 export default function KendaraanPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const role = localStorage.getItem('role');
+    if (role !== 'superadmin') {
+        router.push('/home');
+    }
+  }, [router]);
+
   return (
     <main className="min-h-screen bg-[#24345A] text-white font-sans">
       <div className="p-8 max-w-5xl mx-auto">

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useModalContext } from "../components/ModalContext";
 
 type Kamera = {
@@ -16,6 +17,14 @@ type Kamera = {
 
 export default function KameraPage() {
   const { setIsModalOpen, showNotification } = useModalContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    const role = localStorage.getItem('role');
+    if (role !== 'superadmin') {
+        router.push('/home');
+    }
+  }, [router]);
 
   // ================= STATE =================
   const [kameras, setKameras] = useState<Kamera[]>([

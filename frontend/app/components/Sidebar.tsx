@@ -83,7 +83,7 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop, isDark }: 
                 </Link>
               </li>
 
-              {(role === 'admin' || role === 'superadmin') && (
+              {(role === 'superadmin') && (
                 <>
                   <li className="mt-4 mb-2 text-xs font-bold uppercase text-gray-400 px-3 tracking-wider">Manajemen Data</li>
                   <li>

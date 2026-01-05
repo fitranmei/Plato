@@ -9,12 +9,19 @@ type User = {
   username: string;
   email: string;
   role: string;
-  region: string;
+  balai: string;
   last_login: string;
 };
 
 export default function ManajemenUserPage() {
   const router = useRouter();
+  
+  useEffect(() => {
+    const role = localStorage.getItem('role');
+    if (role !== 'superadmin') {
+        router.push('/home');
+    }
+  }, [router]);
   
   // ================= STATE =================
   const [users, setUsers] = useState<User[]>([]);
@@ -28,10 +35,36 @@ export default function ManajemenUserPage() {
     password: "",
     confirm: "",
     role: "user",
-    region: "",
+    balai: "",
   });
 
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+
+  const balaiOptions = [
+    "BPJN-I-Banda-Aceh",
+    "BBPJN-II-Medan",
+    "BBPJN-III-Padang",
+    "BPJN-IV-Jambi",
+    "BBPJN-V-Palembang",
+    "BBPJN-VI-Jakarta",
+    "BBPJN-VII-Semarang",
+    "BBPJN-VIII-Surabaya",
+    "BBPJN-IX-Mataram",
+    "BPJN-X-Kupang",
+    "BBPJN-XI-Banjarmasin",
+    "BBPJN-XII-Balikpapan",
+    "BBPJN-XIII-Makassar",
+    "BPJN-XIV-Palu",
+    "BPJN-XV-Manado",
+    "BPJN-XVI-Ambon",
+    "BPJN-XVII-Manokwari",
+    "BBPJN-XVIII-Jayapura",
+    "Balai-Jembatan-Khusus-dan-Terowongan",
+    "BPJN-XIX-Bandar-Lampung",
+    "BPJN-XX-Pontianak",
+    "BPJN-XXI-Kendari",
+    "BPJN-XXII-Merauke"
+  ];
 
   useEffect(() => {
     fetchUsers();
@@ -66,7 +99,7 @@ export default function ManajemenUserPage() {
   );
 
   const handleSave = async () => {
-    if (!form.username || !form.email || !form.password || !form.region) {
+    if (!form.username || !form.email || !form.password || !form.balai) {
         setNotification({ message: "Semua field wajib diisi", type: 'error' });
         return;
     }
@@ -94,7 +127,7 @@ export default function ManajemenUserPage() {
                 email: form.email,
                 password: form.password,
                 role: form.role,
-                region: form.region
+                balai: form.balai
             })
         });
 
@@ -112,7 +145,7 @@ export default function ManajemenUserPage() {
             password: "",
             confirm: "",
             role: "user",
-            region: "",
+            balai: "",
         });
         fetchUsers();
     } catch (error: any) {
@@ -166,7 +199,7 @@ export default function ManajemenUserPage() {
                     <th className="px-4 py-3 text-left">Username</th>
                     <th className="px-4 py-3 text-left">Email</th>
                     <th className="px-4 py-3 text-left">Role</th>
-                    <th className="px-4 py-3 text-left">Region</th>
+                    <th className="px-4 py-3 text-left">Balai</th>
                     <th className="px-4 py-3 text-left">Login Terakhir</th>
                 </tr>
                 </thead>
@@ -184,7 +217,7 @@ export default function ManajemenUserPage() {
                         <td className="px-4 py-3 font-medium">{u.username}</td>
                         <td className="px-4 py-3">{u.email}</td>
                         <td className="px-4 py-3 capitalize">{u.role}</td>
-                        <td className="px-4 py-3">{u.region}</td>
+                        <td className="px-4 py-3">{u.balai}</td>
                         <td className="px-4 py-3">{u.last_login ? new Date(u.last_login).toLocaleString() : '-'}</td>
                         </tr>
                     ))
@@ -280,15 +313,20 @@ export default function ManajemenUserPage() {
                 </div>
 
                 <div>
-                  <label className="font-medium">Region</label>
-                  <input
+                  <label className="font-medium">Balai</label>
+                  <select
                     className={inputClass}
-                    placeholder="Masukkan region"
-                    value={form.region}
+                    value={form.balai}
                     onChange={(e) =>
-                      setForm({ ...form, region: e.target.value })
+                      setForm({ ...form, balai: e.target.value })
                     }
-                  />
+                  >
+                    <option value="">Pilih Balai</option>
+                    <option value="Pusat">Pusat</option>
+                    {balaiOptions.map((balai) => (
+                        <option key={balai} value={balai}>{balai}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

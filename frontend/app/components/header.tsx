@@ -149,9 +149,6 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
         )}
       </div>
 
-      {/* --- BAGIAN TENGAH (Search Bar) --- */}
-      <div className="flex-1 flex justify-center px-4 md:px-10">
-      </div>
 
       {/* --- BAGIAN KANAN --- */}
       <div className="flex items-center gap-4">
@@ -169,7 +166,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
              {/* Dropdown Menu Home */}
              {isOpen && (
                 <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 py-2">
-                    {(role === 'admin' || role === 'superadmin') && (
+                    {(role === 'superadmin') && (
                       <>
                         <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">Manajemen Data</div>
                         <Link href="/lokasi" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-gray-50"><MapPin size={18}/> Lokasi SINDILA</Link>
