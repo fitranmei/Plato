@@ -17,6 +17,9 @@ const config: Config = {
           900: '#1939B7', // brand-900
         }
       },
+      fontFamily: {
+        sans: ['var(--font-gabarito)', 'sans-serif'],
+      },
       // -------------------------
     },
   },

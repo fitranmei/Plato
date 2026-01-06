@@ -78,33 +78,33 @@ export default function Sidebar({ controlledOpen, setOpen, isDesktop, isDark }: 
           <nav className="flex-1 overflow-auto p-3">
             <ul className="space-y-1">
               <li>
-                <Link href="/home" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/home' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
+                <Link href="/home" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/home' ? 'bg-blue-100 text-black font-bold' : 'text-black'}`}>
                   <Home size={20} /> <span>Beranda</span>
                 </Link>
               </li>
 
               {(role === 'superadmin') && (
                 <>
-                  <li className="mt-4 mb-2 text-xs font-bold uppercase text-gray-400 px-3 tracking-wider">Manajemen Data</li>
+                  <li className="mt-4 mb-2 text-xs font-bold uppercase text-black px-3 tracking-wider">Manajemen Data</li>
                   <li>
-                    <Link href="/lokasi" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/lokasi' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
+                    <Link href="/lokasi" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/lokasi' ? 'bg-blue-100 text-black font-bold' : 'text-black'}`}>
                       <MapPin size={20} /> <span>Data Lokasi</span>
                     </Link>
                   </li>
                   <li>
-                    <Link href="/kamera" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/kamera' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
+                    <Link href="/kamera" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/kamera' ? 'bg-blue-100 text-black font-bold' : 'text-black'}`}>
                       <Video size={20} /> <span>Data Kamera</span>
                     </Link>
                   </li>
                   <li>
-                    <Link href="/kendaraan" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/kendaraan' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
+                    <Link href="/kendaraan" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/kendaraan' ? 'bg-blue-100 text-black font-bold' : 'text-black'}`}>
                       <Truck size={20} /> <span>Klasifikasi Kendaraan</span>
                     </Link>
                   </li>
 
-                  <li className="mt-4 mb-2 text-xs font-bold uppercase text-gray-400 px-3 tracking-wider">Manajemen User</li>
+                  <li className="mt-4 mb-2 text-xs font-bold uppercase text-black px-3 tracking-wider">Manajemen User</li>
                   <li>
-                    <Link href="/manajemen-user" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/manajemen-user' ? 'bg-blue-100 text-black font-bold' : 'text-gray-400'}`}>
+                    <Link href="/manajemen-user" className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 transition-colors font-medium ${pathname === '/manajemen-user' ? 'bg-blue-100 text-black font-bold' : 'text-black'}`}>
                       <Users size={20} /> <span>Data User</span>
                     </Link>
                   </li>

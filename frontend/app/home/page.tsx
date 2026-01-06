@@ -6,6 +6,8 @@ import HomeCard from "../components/homeCard";
 import MapWrapper from '../components/MapWrapper';
 import { useRouter } from 'next/navigation';
 
+const STATUS_OPTIONS = ["Sangat Lancar", "Lancar", "Normal", "Padat", "Sangat Padat", "Macet Total"];
+
 export default function UserPage() {
   const [locations, setLocations] = useState<any[]>([]);
   const [cameras, setCameras] = useState<any[]>([]);
@@ -30,7 +32,15 @@ export default function UserPage() {
 
         if (resLo.ok) {
           const data = await resLo.json();
-          setLocations(Array.isArray(data.data) ? data.data : []);
+          const rawLocations = Array.isArray(data.data) ? data.data : [];
+          // Enhance with mock data for consistency between Map and Cards
+          const enhancedLocations = rawLocations.map((l: any) => ({
+             ...l,
+             status1: STATUS_OPTIONS[Math.floor(Math.random() * STATUS_OPTIONS.length)],
+             status2: STATUS_OPTIONS[Math.floor(Math.random() * STATUS_OPTIONS.length)],
+             smp: Math.floor(Math.random() * 200)
+          }));
+          setLocations(enhancedLocations);
         }
 
         if (resCam.ok) {
@@ -78,10 +88,10 @@ export default function UserPage() {
                     id={loc.id}
                     location={loc.nama_lokasi}
                     lastUpdate={new Date(loc.timestamp).toLocaleTimeString()}
-                    smp={0} 
+                    smp={loc.smp} 
                     status={loc.hide_lokasi ? "Offline" : "Online"} 
-                    direction1={{ name: dirName1, status: "LANCAR" }}
-                    direction2={{ name: dirName2, status: "LANCAR" }}
+                    direction1={{ name: dirName1, status: loc.status1 }}
+                    direction2={{ name: dirName2, status: loc.status2 }}
                   />
                 );
             })

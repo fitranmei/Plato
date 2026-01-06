@@ -233,19 +233,13 @@ export default function MonitoringPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="flex flex-col gap-6">
                         <DetailCard
-                            headerColor="bg-[#D1F232]"
                             direction={dir1}
-                            status="PADAT"
-                            textColor="text-black"
                             speed={Math.floor(Math.random() * 60) + 40}
                             locationType={location.tipe_lokasi}
                         />
 
                         <DetailCard
-                            headerColor="bg-[#FAFF00]"
                             direction={dir2}
-                            status="NORMAL"
-                            textColor="text-black"
                             speed={Math.floor(Math.random() * 60) + 60}
                             locationType={location.tipe_lokasi}
                         />
@@ -501,44 +495,77 @@ function ChartCard({ title, children }: any) {
     );
 }
 
-function DetailCard({ headerColor, textColor, direction, status, speed, locationType }: any) {
+
+const TRAFFIC_CONFIG: Record<string, { color: string; textColor: string }> = {
+  "Sangat Lancar": { color: "#2E7D32", textColor: "text-white" },
+  "Lancar":        { color: "#66BB6A", textColor: "text-black" },
+  "Normal":        { color: "#FDD835", textColor: "text-black" },
+  "Padat":         { color: "#FB8C00", textColor: "text-white" },
+  "Sangat Padat":  { color: "#E53935", textColor: "text-white" },
+  "Macet Total":   { color: "#212121", textColor: "text-white" },
+};
+
+const getTrafficStyle = (status: string) => {
+  return TRAFFIC_CONFIG[status] || { color: "#9CA3AF", textColor: "text-white" }; // Default gray
+};
+
+const STATUS_KEYS = Object.keys(TRAFFIC_CONFIG);
+
+function DetailCard({  direction, speed, locationType }: any) {
     const is12Classes = locationType === '12_kelas';
     const vehicles = is12Classes 
         ? Array.from({ length: 12 }, (_, i) => `Kelas ${i + 1}`)
         : ["Motor", "Mobil", "Truk", "Bus", "Kontainer"];
+    
+    // Determine status randomly or based on speed (mock logic)
+    // In real app, this should come from props
+    let status = "Lancar";
+    if (speed < 10) status = "Macet Total";
+    else if (speed < 20) status = "Sangat Padat";
+    else if (speed < 40) status = "Padat";
+    else if (speed < 60) status = "Normal";
+    else if (speed < 80) status = "Lancar";
+    else status = "Sangat Lancar";
+
+    const style = getTrafficStyle(status);
 
     return (
         <div className="bg-white rounded-xl overflow-hidden text-gray-800 shadow-lg">
-            <div className={`${headerColor} ${textColor} p-3 flex justify-between items-center font-bold`}>
+            <div className={`p-3 flex justify-between items-center font-bold ${style.textColor}`} style={{ backgroundColor: style.color }}>
                 <div className='flex items-center'>
-                    <div className="p-2 rounded-lg text-black">
+                    <div className="p-2 rounded-lg text-black bg-white/20 backdrop-blur-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={4} stroke="currentColor" className="w-6 h-6">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
                         </svg>
                     </div>
-                    <span>{direction}</span>
+                    <span className="ml-2">{direction}</span>
                 </div>
                 <div className="flex items-center flex-row gap-2">
-                    <span className=' text-end'>{status}</span>
+                    <span className=' text-end'>{status.toUpperCase()}</span>
                 </div>
             </div>
             <div className="p-4">
-                <div className={`mb-4 border-b pt-4 pb-4 ${is12Classes ? 'grid grid-cols-6 gap-y-6 gap-x-2' : 'flex justify-between px-4 md:px-10'}`}>
+                <div className={`mb-2 border-b pt-2 pb-2 ${is12Classes ? 'grid grid-cols-6 gap-y-6 gap-x-2' : 'flex justify-between px-4 md:px-10'}`}>
                     {vehicles.map((v, i) => (
-                        <VehicleIcon key={i} label={Math.floor(Math.random() * 50) + 10} sub="km/jam" type={v} />
+                        <VehicleIcon 
+                            key={i} 
+                            count={Math.floor(Math.random() * 500) + 50} 
+                            speed={Math.floor(Math.random() * 60) + 20} 
+                            type={v} 
+                        />
                     ))}
                 </div>
                 <div className="text-right">
-                    <span className="text-sm font-semibold mr-2">Kecepatan Rata-Rata</span>
-                    <span className="text-4xl font-bold">{speed}</span>
-                    <span className="text-sm font-semibold ml-1">km/jam</span>
+                    <span className="text-xs font-semibold mr-2 text-gray-500">Kecepatan Rata-Rata</span>
+                    <span className="text-lg font-bold">{speed}</span>
+                    <span className="text-xs font-semibold ml-1 text-gray-500">km/jam</span>
                 </div>
             </div>
         </div>
     );
 }
 
-function VehicleIcon({ label, sub, type }: any) {
+function VehicleIcon({ count, speed, type }: any) {
         const key = (type || '').toLowerCase();
         let imageName = 'car.png';
         
@@ -561,8 +588,8 @@ function VehicleIcon({ label, sub, type }: any) {
                         width={40}
                         height={40}
                     />
-                        <span className="font-bold text-xs">{label}</span>
-                        <span className="text-[10px] text-gray-500">{sub}</span>
+                        <span className="font-bold text-lg mt-1">{count}</span>
+                        <span className="text-xs font-semibold text-gray-500">{speed} km/jam</span>
                 </div>
         );
 }

@@ -15,6 +15,21 @@ const customIcon = new L.Icon({
     popupAnchor: [1, -34] // Posisi popup di atas icon
 });
 
+const TRAFFIC_CONFIG: Record<string, { color: string; textColor: string }> = {
+  "Sangat Lancar": { color: "#2E7D32", textColor: "text-white" },
+  "Lancar":        { color: "#66BB6A", textColor: "text-black" },
+  "Normal":        { color: "#FDD835", textColor: "text-black" },
+  "Padat":         { color: "#FB8C00", textColor: "text-white" },
+  "Sangat Padat":  { color: "#E53935", textColor: "text-white" },
+  "Macet Total":   { color: "#212121", textColor: "text-white" },
+};
+
+const getTrafficStyle = (status: string) => {
+  return TRAFFIC_CONFIG[status] || { color: "#9CA3AF", textColor: "text-white" }; // Default gray
+};
+
+const STATUS_KEYS = Object.keys(TRAFFIC_CONFIG);
+
 interface LocationData {
     id: string;
     nama_lokasi: string;
@@ -72,6 +87,17 @@ export default function MapPicker({ locations = [], cameras = [], onMarkerClick 
                 const cam = cameras.find((c: any) => c.lokasi_id === loc.id);
                 const dir1 = cam?.zona_arah?.[0]?.arah || "Arah 1";
                 const dir2 = cam?.zona_arah?.[1]?.arah || "Arah 2";
+                
+                // MOCK status logic since data might not be available
+                // Pick semi-randomly or default to something based on ID if needed, 
+                // but since this is a UI demo request, we can just pick random defaults for variety 
+                // OR default to "Lancar" if no data.
+                // Assuming `loc.status1` and `loc.status2` might exist later.
+                const status1 = loc.status1 || STATUS_KEYS[Math.floor(Math.random() * STATUS_KEYS.length)];
+                const status2 = loc.status2 || STATUS_KEYS[Math.floor(Math.random() * STATUS_KEYS.length)];
+
+                const style1 = getTrafficStyle(status1);
+                const style2 = getTrafficStyle(status2);
 
                 return (
                 <Marker 
@@ -88,7 +114,7 @@ export default function MapPicker({ locations = [], cameras = [], onMarkerClick 
                               </div>
                               <div className="text-right pr-6">
                                 <h3 className="text-sm font-bold m-0 leading-tight mt-2">{loc.nama_lokasi}</h3>
-                                <p className="text-[10px] opacity-90 m-0 mt-0.5">Update: {new Date(loc.timestamp).toLocaleTimeString()}</p>
+                                <p className="text-[10px] opacity-90 m-0 mt-0.5">Update: {new Date(loc.timestamp || Date.now()).toLocaleTimeString()}</p>
                               </div>
                            </div>
                            
@@ -98,26 +124,26 @@ export default function MapPicker({ locations = [], cameras = [], onMarkerClick 
                               <div className="flex flex-col gap-1">
                                 {/* Direction 1 */}
                                 <div className="flex items-center gap-1.5">
-                                  <div className="bg-orange-500 p-1 rounded text-black flex items-center justify-center">
+                                  <div className={`p-1 rounded ${style1.textColor} flex items-center justify-center`} style={{ backgroundColor: style1.color }}>
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-3 h-3">
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
                                     </svg>
                                   </div>
                                   <div>
                                     <p className="text-[10px] text-gray-500 m-0 leading-none mb-[-4px]">{dir1}</p>
-                                    <p className="text-xs font-bold text-gray-800 m-0 leading-none">LANCAR</p>
+                                    <p className="text-xs font-bold text-gray-800 m-0 leading-none mt-1">{status1.toUpperCase()}</p>
                                   </div>
                                 </div>
                                 {/* Direction 2 */}
                                 <div className="flex items-center gap-1.5">
-                                  <div className="bg-orange-500 p-1 rounded text-black flex items-center justify-center">
+                                  <div className={`p-1 rounded ${style2.textColor} flex items-center justify-center`} style={{ backgroundColor: style2.color }}>
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-3 h-3">
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" />
                                     </svg>
                                   </div>
                                   <div>
                                     <p className="text-[10px] text-gray-500 m-0 leading-none mb-[-4px]">{dir2}</p>
-                                    <p className="text-xs font-bold text-gray-800 m-0 leading-none">LANCAR</p>
+                                    <p className="text-xs font-bold text-gray-800 m-0 leading-none mt-1">{status2.toUpperCase()}</p>
                                   </div>
                                 </div>
                               </div>
@@ -125,7 +151,7 @@ export default function MapPicker({ locations = [], cameras = [], onMarkerClick 
                               {/* Right: SMP + Button */}
                               <div className="flex flex-col items-end gap-1">
                                 <div className="text-right">
-                                  <span className="text-2xl font-bold text-gray-900">0</span>
+                                  <span className="text-2xl font-bold text-gray-900">{loc.smp ?? 0}</span>
                                   <span className="text-gray-500 text-[10px] ml-0.5">SMP/jam</span>
                                 </div>
                                 <a 

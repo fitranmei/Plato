@@ -8,6 +8,7 @@ import AppShell from './components/AppShell';
 const gabarito = Gabarito({
   subsets: ["latin"],
   display: 'swap',
+  variable: '--font-gabarito',
 });
 
 export const metadata: Metadata = {
@@ -22,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={gabarito.className}>
+      <body className={gabarito.variable}>
         <AppShell>
           {children}
         </AppShell>
