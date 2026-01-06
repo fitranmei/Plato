@@ -8,12 +8,12 @@ import { useRouter } from 'next/navigation';
 
 export default function UserPage() {
   const [locations, setLocations] = useState<any[]>([]);
-  const [selectedLocation, setSelectedLocation] = useState<any | null>(null);
+  const [cameras, setCameras] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchLocations = async () => {
+    const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
@@ -21,27 +21,31 @@ export default function UserPage() {
           return;
         }
 
-        const res = await fetch("/api/locations", {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
+        const headers = { "Authorization": `Bearer ${token}` };
 
-        if (res.ok) {
-          const data = await res.json();
-          // Backend returns { data: [...], count: ... }
+        const [resLo, resCam] = await Promise.all([
+             fetch("/api/locations", { headers }),
+             fetch("/api/cameras", { headers })
+        ]);
+
+        if (resLo.ok) {
+          const data = await resLo.json();
           setLocations(Array.isArray(data.data) ? data.data : []);
-        } else {
-          console.error("Failed to fetch locations");
         }
+
+        if (resCam.ok) {
+            const data = await resCam.json();
+            setCameras(Array.isArray(data.data) ? data.data : []);
+        }
+
       } catch (error) {
-        console.error("Error fetching locations:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchLocations();
+    fetchData();
   }, [router]);
 
   const displayedLocations = locations;
@@ -50,7 +54,7 @@ export default function UserPage() {
     <main className="min-h-screen flex flex-col bg-gray-100 bg-[url('/images/bg-home.webp')] bg-center">
       <section className="p-6 px-40 flex flex-col">
         <div className="w-full h-[400px] bg-white rounded-xl mb-10 overflow-hidden shadow-md border border-gray-200">
-         <MapWrapper locations={locations} />
+         <MapWrapper locations={locations} cameras={cameras} />
         </div>
         <div className="flex flex-row gap-3 flex-wrap justify-center">
           {loading ? (
@@ -58,18 +62,29 @@ export default function UserPage() {
           ) : displayedLocations.length === 0 ? (
              <div className="text-gray-500">Tidak ada lokasi tersedia.</div>
           ) : (
-            displayedLocations.map((loc) => (
-              <HomeCard 
-                key={loc.id}
-                id={loc.id}
-                location={loc.nama_lokasi}
-                lastUpdate={new Date(loc.timestamp).toLocaleTimeString()}
-                smp={0} // Placeholder, data from backend might not have this yet
-                status={loc.hide_lokasi ? "Offline" : "Online"} // Placeholder logic
-                direction1={{ name: "Arah 1", status: "LANCAR" }}
-                direction2={{ name: "Arah 2", status: "LANCAR" }}
-              />
-            ))
+            displayedLocations.map((loc) => {
+                const cam = cameras.find(c => c.lokasi_id === loc.id);
+                // Fallback is just "1" and "2" because HomeCard might prepend "Arah ke" or we handle it inside HomeCard
+                // Based on plan: HomeCard will NOT prepend "Arah ke" anymore.
+                // So here we should provide the FULL label.
+                // If cam.zona_arah exists, use it.
+                // If not, default to "Arah 1" / "Arah 2".
+                const dirName1 = cam?.zona_arah?.[0]?.arah || "Arah 1";
+                const dirName2 = cam?.zona_arah?.[1]?.arah || "Arah 2";
+
+                return (
+                  <HomeCard 
+                    key={loc.id}
+                    id={loc.id}
+                    location={loc.nama_lokasi}
+                    lastUpdate={new Date(loc.timestamp).toLocaleTimeString()}
+                    smp={0} 
+                    status={loc.hide_lokasi ? "Offline" : "Online"} 
+                    direction1={{ name: dirName1, status: "LANCAR" }}
+                    direction2={{ name: dirName2, status: "LANCAR" }}
+                  />
+                );
+            })
           )}
         </div>
       </section>

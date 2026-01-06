@@ -302,10 +302,21 @@ export default function LokasiPage() {
                 throw new Error(errData.error || 'Gagal menyimpan lokasi');
             }
 
+            const responseData = await res.json();
+
             setNotification({ message: `Lokasi berhasil ${editingId ? 'diupdate' : 'disimpan'}`, type: 'success' });
             closeModal();
-            // Refresh data
-            setTimeout(() => window.location.reload(), 1500); 
+            // Redirect to camera creation if new location
+            if (!editingId && responseData.data?.nama_lokasi) {
+                setTimeout(() => {
+                    const lokasiName = responseData.data.nama_lokasi;
+                    const lokasiId = responseData.data.id;
+                    router.push(`/kamera?openModal=true&lokasi=${encodeURIComponent(lokasiName)}&lokasiId=${lokasiId}`);
+                }, 1000);
+            } else {
+                // Refresh data
+                setTimeout(() => window.location.reload(), 1500); 
+            } 
         } catch (error: any) {
             setNotification({ message: error.message, type: 'error' });
         }

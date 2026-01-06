@@ -48,7 +48,7 @@ const HomeCard = ({
                </svg>
             </div>
             <div>
-              <p className="text-gray-600 text-sm font-medium">Arah ke {direction1.name}</p>
+              <p className="text-gray-600 text-sm font-medium">{direction1.name}</p>
               <p className="text-xl font-bold text-gray-800">{direction1.status}</p>
             </div>
           </div>
@@ -60,7 +60,7 @@ const HomeCard = ({
                </svg>
             </div>
             <div>
-              <p className="text-gray-600 text-sm font-medium">Arah ke {direction2.name}</p>
+              <p className="text-gray-600 text-sm font-medium">{direction2.name}</p>
               <p className="text-xl font-bold text-gray-800">{direction2.status}</p>
             </div>
           </div>

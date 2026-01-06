@@ -25,6 +25,7 @@ interface LocationData {
 
 interface MapPickerProps {
     locations?: LocationData[];
+    cameras?: any[];
     onMarkerClick?: (loc: LocationData) => void;
 }
 
@@ -44,7 +45,7 @@ function LocationMarker({ position, setPosition }: any) {
   );
 }
 
-export default function MapPicker({ locations = [], onMarkerClick }: MapPickerProps) {
+export default function MapPicker({ locations = [], cameras = [], onMarkerClick }: MapPickerProps) {
   const [position, setPosition] = useState<[number, number]>([-6.8586, 107.9193]);
   const [hasMounted, setHasMounted] = useState(false);
 
@@ -67,7 +68,12 @@ export default function MapPicker({ locations = [], onMarkerClick }: MapPickerPr
         />
 
         {locations.length > 0 ? (
-            locations.map((loc) => (
+            locations.map((loc) => {
+                const cam = cameras.find((c: any) => c.lokasi_id === loc.id);
+                const dir1 = cam?.zona_arah?.[0]?.arah || "Arah 1";
+                const dir2 = cam?.zona_arah?.[1]?.arah || "Arah 2";
+
+                return (
                 <Marker 
                     key={loc.id} 
                     position={[loc.latitude, loc.longitude]} 
@@ -98,7 +104,7 @@ export default function MapPicker({ locations = [], onMarkerClick }: MapPickerPr
                                     </svg>
                                   </div>
                                   <div>
-                                    <p className="text-[10px] text-gray-500 m-0 leading-none mb-[-4px]">Arah 1</p>
+                                    <p className="text-[10px] text-gray-500 m-0 leading-none mb-[-4px]">{dir1}</p>
                                     <p className="text-xs font-bold text-gray-800 m-0 leading-none">LANCAR</p>
                                   </div>
                                 </div>
@@ -110,7 +116,7 @@ export default function MapPicker({ locations = [], onMarkerClick }: MapPickerPr
                                     </svg>
                                   </div>
                                   <div>
-                                    <p className="text-[10px] text-gray-500 m-0 leading-none mb-[-4px]">Arah 2</p>
+                                    <p className="text-[10px] text-gray-500 m-0 leading-none mb-[-4px]">{dir2}</p>
                                     <p className="text-xs font-bold text-gray-800 m-0 leading-none">LANCAR</p>
                                   </div>
                                 </div>
@@ -134,7 +140,8 @@ export default function MapPicker({ locations = [], onMarkerClick }: MapPickerPr
                         </div>
                     </Popup>
                 </Marker>
-            ))
+            );
+            })
         ) : (
             <LocationMarker position={position} setPosition={setPosition} />
         )}

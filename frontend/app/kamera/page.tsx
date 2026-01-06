@@ -1,23 +1,32 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { X, Video } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useModalContext } from "../components/ModalContext";
 
 type Kamera = {
-  id: number;
-  tipe: string;
-  arah1: string;
-  zona1: string;
-  arah2: string;
-  zona2: string;
-  lokasi: string;
+  id: string;
+  tipe_kamera: string;
+  zona_arah: { id_zona_arah: string; arah: string }[];
+  lokasi_penempatan: string;
+  lokasi_id: string;
+};
+
+type Location = {
+  id: string;
+  nama_lokasi: string;
+  alamat_lokasi: string;
+  keterangan: string;
 };
 
 export default function KameraPage() {
   const { setIsModalOpen, showNotification } = useModalContext();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const openParam = searchParams.get('openModal');
+  const lokasiParam = searchParams.get('lokasi');
+  const lokasiIdParam = searchParams.get('lokasiId');
 
   useEffect(() => {
     const role = localStorage.getItem('role');
@@ -25,58 +34,162 @@ export default function KameraPage() {
         router.push('/home');
     }
   }, [router]);
-
+  
   // ================= STATE =================
-  const [kameras, setKameras] = useState<Kamera[]>([
-    {
-      id: 1,
-      tipe: "Kamera A",
-      arah1: "Utara",
-      zona1: "Z1",
-      arah2: "Selatan",
-      zona2: "Z2",
-      lokasi: "Jl. Raya Cirebon - Bandung",
-    },
-  ]);
-
-  const [showModal, setShowModal] = useState(false);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [kameras, setKameras] = useState<Kamera[]>([]); // For the modal list
+  const [showModal, setShowModal] = useState(false); // Add Camera Modal
+  const [showListModal, setShowListModal] = useState(false); // List Camera Modal
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
 
   const [form, setForm] = useState({
     tipe: "",
     arah1: "",
-    zona1: "",
     arah2: "",
-    zona2: "",
     lokasi: "",
+    lokasi_id: "",
   });
 
   useEffect(() => {
-    setIsModalOpen(showModal);
-  }, [showModal, setIsModalOpen]);
+    if (openParam === 'true') {
+      setShowModal(true);
+      if (lokasiParam) {
+        setForm(prev => ({ ...prev, lokasi: lokasiParam }));
+      }
+      if (lokasiIdParam) {
+        setForm(prev => ({ ...prev, lokasi_id: lokasiIdParam }));
+      }
+    }
+  }, [openParam, lokasiParam, lokasiIdParam]);
+
+  useEffect(() => {
+    fetchLocations();
+  }, []);
+
+  const fetchLocations = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/locations', {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLocations(data.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch locations:", error);
+    }
+  };
+
+  const fetchCamerasByLocation = async (lokasiId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/cameras/lokasi/${lokasiId}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setKameras(data.data || []);
+      } else {
+        setKameras([]);
+      }
+    } catch (error) {
+        console.error("Failed to fetch cameras by location:", error);
+        setKameras([]);
+    }
+  };
+
+  const openCameraList = (loc: Location) => {
+      setSelectedLocation(loc);
+      fetchCamerasByLocation(loc.id);
+      setShowListModal(true);
+  };
+
+  useEffect(() => {
+    setIsModalOpen(showModal || showListModal);
+  }, [showModal, showListModal, setIsModalOpen]);
 
   // ================= LOGIC =================
-  const handleSave = () => {
-    if (!form.tipe || !form.lokasi) return;
+  const handleSave = async () => {
+    // Basic validation
+    if (!form.tipe) {
+      showNotification && showNotification('Tipe kamera harus diisi', 'error');
+      return;
+    }
+    if (!form.lokasi) {
+      showNotification && showNotification('Lokasi penempatan harus diisi', 'error');
+      return;
+    }
+    if (!form.lokasi_id) {
+      showNotification && showNotification('ID Lokasi hilang (Silakan refresh/buka dari halaman Lokasi)', 'error');
+      return;
+    }
+    if (!form.arah1) {
+      showNotification && showNotification('Arah 1 harus diisi', 'error');
+      return;
+    }
 
-    setKameras([
-      ...kameras,
-      {
-        id: kameras.length + 1,
-        ...form,
-      },
-    ]);
+    // Construct zona_arah payload conditionally
+    const zonaArahPayload = [{ arah: form.arah1 }];
+    if (form.arah2) {
+      zonaArahPayload.push({ arah: form.arah2 });
+    }
 
-    setForm({
-      tipe: "",
-      arah1: "",
-      zona1: "",
-      arah2: "",
-      zona2: "",
-      lokasi: "",
-    });
+    const payload = {
+        tipe_kamera: form.tipe,
+        zona_arah: zonaArahPayload,
+        lokasi_penempatan: form.lokasi,
+        lokasi_id: form.lokasi_id,
+        api_key: "", // Optional or generated by backend
+        keterangan: ""
+    };
 
-    setShowModal(false);
-    showNotification && showNotification('Kamera berhasil disimpan');
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/cameras', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || 'Gagal menyimpan kamera');
+        }
+
+        setShowModal(false);
+        showNotification && showNotification('Kamera berhasil disimpan');
+        
+        setForm({
+            tipe: "",
+            arah1: "",
+            arah2: "",
+            lokasi: "",
+            lokasi_id: "",
+        });
+        
+        // Refresh data (maybe redirect to list view or something, or nothing since we show location list now)
+        // Perhaps open the list modal?
+        if (form.lokasi_id && form.lokasi) {
+            const loc = locations.find(l => l.id === form.lokasi_id) || {
+                id: form.lokasi_id,
+                nama_lokasi: form.lokasi,
+                alamat_lokasi: '',
+                keterangan: ''
+            };
+            openCameraList(loc);
+        }
+
+    } catch (error: any) {
+        showNotification && showNotification(error.message, 'error');
+    }
   };
 
   const inputClass =
@@ -90,12 +203,6 @@ export default function KameraPage() {
         {/* ===== TITLE & ACTION ===== */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">DATA KAMERA</h1>
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg shadow"
-          >
-            + Tambah Data Kamera
-          </button>
         </div>
 
         {/* ===== TABLE ===== */}
@@ -104,30 +211,114 @@ export default function KameraPage() {
             <thead className="bg-gray-100">
               <tr>
                 <th className="px-4 py-3">No</th>
-                <th className="px-4 py-3">Tipe Kamera</th>
-                <th className="px-4 py-3">Arah 1</th>
-                <th className="px-4 py-3">ID Zona 1</th>
-                <th className="px-4 py-3">Arah 2</th>
-                <th className="px-4 py-3">ID Zona 2</th>
-                <th className="px-4 py-3">Lokasi</th>
+                <th className="px-4 py-3">Nama Lokasi</th>
+                <th className="px-4 py-3">Alamat</th>
+                <th className="px-4 py-3">Keterangan</th>
+                <th className="px-4 py-3 text-center">Daftar Kamera</th>
               </tr>
             </thead>
             <tbody>
-              {kameras.map((k, i) => (
-                <tr key={k.id} className="border-t">
+              {locations.map((loc, i) => (
+                <tr key={loc.id} className="border-t">
                   <td className="px-4 py-3">{i + 1}</td>
-                  <td className="px-4 py-3">{k.tipe}</td>
-                  <td className="px-4 py-3">{k.arah1}</td>
-                  <td className="px-4 py-3">{k.zona1}</td>
-                  <td className="px-4 py-3">{k.arah2}</td>
-                  <td className="px-4 py-3">{k.zona2}</td>
-                  <td className="px-4 py-3">{k.lokasi}</td>
+                  <td className="px-4 py-3 font-semibold text-[#24345A]">{loc.nama_lokasi}</td>
+                  <td className="px-4 py-3">{loc.alamat_lokasi}</td>
+                  <td className="px-4 py-3">{loc.keterangan || '-'}</td>
+                  <td className="px-4 py-3 text-center">
+                    <button 
+                        onClick={() => openCameraList(loc)}
+                        className="p-2 border rounded hover:bg-gray-50 text-gray-600"
+                        title="Lihat Kamera"
+                    >
+                        <Video size={18} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {locations.length === 0 && (
+            <div className="p-8 text-center text-gray-500">
+                Belum ada data lokasi
+            </div>
+          )}
         </div>
       </div>
+
+      {/* ================= MODAL LIHAT KAMERA ================= */}
+      {showListModal && selectedLocation && (
+        <>
+            <div
+                className="fixed inset-0 bg-black/60 z-40"
+                onClick={() => setShowListModal(false)}
+            />
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+                <div className="bg-white w-[900px] rounded-xl p-8 text-black relative max-h-[80vh] overflow-y-auto">
+                    <button
+                        onClick={() => setShowListModal(false)}
+                        className="absolute top-4 right-4 text-gray-500 hover:text-black"
+                    >
+                        <X size={24} />
+                    </button>
+                    
+                    <h2 className="text-xl font-bold mb-2">Daftar Kamera</h2>
+                    <p className="text-gray-500 mb-6">Lokasi: {selectedLocation.nama_lokasi}</p>
+
+                     <table className="min-w-full text-sm text-left border rounded-lg">
+                        <thead className="bg-gray-100">
+                        <tr>
+                            <th className="px-4 py-3 border-b">No</th>
+                            <th className="px-4 py-3 border-b">Tipe Kamera</th>
+                            <th className="px-4 py-3 border-b">Arah 1</th>
+                            <th className="px-4 py-3 border-b">ID Zona 1</th>
+                            <th className="px-4 py-3 border-b">Arah 2</th>
+                            <th className="px-4 py-3 border-b">ID Zona 2</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {kameras.length > 0 ? (
+                            kameras.map((k, i) => (
+                                <tr key={k.id} className="border-b">
+                                <td className="px-4 py-3">{i + 1}</td>
+                                <td className="px-4 py-3">{k.tipe_kamera}</td>
+                                <td className="px-4 py-3">{k.zona_arah?.[0]?.arah || '-'}</td>
+                                <td className="px-4 py-3">{k.zona_arah?.[0]?.id_zona_arah || '-'}</td>
+                                <td className="px-4 py-3">{k.zona_arah?.[1]?.arah || '-'}</td>
+                                <td className="px-4 py-3">{k.zona_arah?.[1]?.id_zona_arah || '-'}</td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                                    Tidak ada data kamera di lokasi ini
+                                </td>
+                            </tr>
+                        )}
+                        </tbody>
+                    </table>
+
+                     <div className="mt-6 flex justify-end">
+                        <button
+                            onClick={() => {
+                                setShowListModal(false);
+                                setForm({
+                                    tipe: "",
+                                    arah1: "",
+                                    arah2: "",
+                                    lokasi: selectedLocation.nama_lokasi,
+                                    lokasi_id: selectedLocation.id,
+                                });
+                                setShowModal(true);
+                            }}
+                            className="bg-[#24345A] text-white px-4 py-2 rounded hover:bg-[#1a2642]"
+                        >
+                            + Tambah Kamera di Sini
+                        </button>
+                     </div>
+                </div>
+            </div>
+        </>
+      )}
 
       {/* ================= MODAL TAMBAH KAMERA ================= */}
       {showModal && (
@@ -159,30 +350,23 @@ export default function KameraPage() {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label>Tipe Kamera</label>
-                  <input
+                  <select
                     className={inputClass}
-                    placeholder="Masukkan tipe kamera"
                     value={form.tipe}
                     onChange={(e) =>
                       setForm({ ...form, tipe: e.target.value })
                     }
-                  />
+                  >
+                    <option value="" disabled>Pilih tipe kamera</option>
+                    <option value="trafficam">Trafficam</option>
+                    <option value="x_stream">X-Stream</option>
+                    <option value="thermicam">Thermicam</option>
+                    <option value="cctv">CCTV</option>
+                  </select>
                 </div>
 
                 <div>
-                  <label>Arah 2</label>
-                  <input
-                    className={inputClass}
-                    placeholder="Masukkan arah 2"
-                    value={form.arah2}
-                    onChange={(e) =>
-                      setForm({ ...form, arah2: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label>Arah 1 ke</label>
+                  <label>Arah Jalur 1</label>
                   <input
                     className={inputClass}
                     placeholder="Masukkan arah 1"
@@ -194,25 +378,13 @@ export default function KameraPage() {
                 </div>
 
                 <div>
-                  <label>ID Zona Arah 2</label>
+                  <label>Arah Jalur 2</label>
                   <input
                     className={inputClass}
-                    placeholder="Masukkan ID zona arah 2"
-                    value={form.zona2}
+                    placeholder="Masukkan arah 2"
+                    value={form.arah2}
                     onChange={(e) =>
-                      setForm({ ...form, zona2: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label>ID Zona Arah 1</label>
-                  <input
-                    className={inputClass}
-                    placeholder="Masukkan ID zona arah 1"
-                    value={form.zona1}
-                    onChange={(e) =>
-                      setForm({ ...form, zona1: e.target.value })
+                      setForm({ ...form, arah2: e.target.value })
                     }
                   />
                 </div>

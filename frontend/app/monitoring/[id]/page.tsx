@@ -120,6 +120,7 @@ interface Location {
 export default function MonitoringPage() {
     const params = useParams();
     const [location, setLocation] = useState<Location | null>(null);
+    const [cameraData, setCameraData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     // Mock Data State
@@ -166,25 +167,28 @@ export default function MonitoringPage() {
 
         console.log("Monitoring Page: ID from params:", params.id);
 
-        const fetchLocation = async () => {
+        const fetchData = async () => {
             try {
+                // 1. Fetch Location
                 console.log(`Fetching location from /api/locations/${params.id}`);
-                const res = await fetch(`/api/locations/${params.id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                const resLoc = await fetch(`/api/locations/${params.id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
-                console.log("Fetch response status:", res.status);
                 
-                if (!res.ok) {
-                    const text = await res.text();
-                    console.error("Fetch error body:", text);
-                    throw new Error('Failed to fetch location');
+                if (!resLoc.ok) throw new Error('Failed to fetch location');
+                const jsonLoc = await resLoc.json();
+                setLocation(jsonLoc.data);
+
+                // 2. Fetch Camera for Direction Names
+                const resCam = await fetch(`/api/cameras/lokasi/${params.id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (resCam.ok) {
+                    const jsonCam = await resCam.json();
+                    if (jsonCam.data && Array.isArray(jsonCam.data) && jsonCam.data.length > 0) {
+                        setCameraData(jsonCam.data[0]);
+                    }
                 }
-                
-                const jsonData = await res.json();
-                console.log("Fetch response json:", jsonData);
-                setLocation(jsonData.data);
                 
                 // Simulate fetching dynamic data
                 setSmpData({ 
@@ -194,13 +198,13 @@ export default function MonitoringPage() {
                 setKilometer(Math.floor(Math.random() * 10) + 5);
 
             } catch (error) {
-                console.error("Error fetching location:", error);
+                console.error("Error fetching data:", error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchLocation();
+        fetchData();
     }, [params.id, router]);
 
     if (loading) {
@@ -218,6 +222,9 @@ export default function MonitoringPage() {
         );
     }
 
+    const dir1 = cameraData?.zona_arah?.[0]?.arah || "Arah 1";
+    const dir2 = cameraData?.zona_arah?.[1]?.arah || "Arah 2";
+
     return (
         <main className="min-h-screen bg-[#1E293B] text-white font-sans pb-10">
 
@@ -227,7 +234,7 @@ export default function MonitoringPage() {
                     <div className="flex flex-col gap-6">
                         <DetailCard
                             headerColor="bg-[#D1F232]"
-                            direction="Arah 1"
+                            direction={dir1}
                             status="PADAT"
                             textColor="text-black"
                             speed={Math.floor(Math.random() * 60) + 40}
@@ -236,7 +243,7 @@ export default function MonitoringPage() {
 
                         <DetailCard
                             headerColor="bg-[#FAFF00]"
-                            direction="Arah 2"
+                            direction={dir2}
                             status="NORMAL"
                             textColor="text-black"
                             speed={Math.floor(Math.random() * 60) + 60}
@@ -269,8 +276,8 @@ export default function MonitoringPage() {
                 <div className="text-center">
                     <h2 className="text-xl font-bold mb-6 flex items-center justify-center gap-2">ARUS KENDARAAN</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <SimpleStats direction="Arah 1" count={smpData.arah1} />
-                        <SimpleStats direction="Arah 2" count={smpData.arah2} />
+                        <SimpleStats direction={dir1} count={smpData.arah1} />
+                        <SimpleStats direction={dir2} count={smpData.arah2} />
                     </div>
                 </div>
 

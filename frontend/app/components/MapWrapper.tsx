@@ -12,5 +12,6 @@ const DynamicMapPicker = dynamic(() => import('./MapPicker'), {
 });
 
 export default function MapWrapper(props: any) {
+  // props will now include locations and cameras
   return <DynamicMapPicker {...props} />;
 }
