@@ -236,12 +236,14 @@ export default function MonitoringPage() {
                             direction={dir1}
                             speed={Math.floor(Math.random() * 60) + 40}
                             locationType={location.tipe_lokasi}
+                            arrow="up"
                         />
 
                         <DetailCard
                             direction={dir2}
                             speed={Math.floor(Math.random() * 60) + 60}
                             locationType={location.tipe_lokasi}
+                            arrow="down"
                         />
 
                         {userRole !== 'user' && (
@@ -511,7 +513,7 @@ const getTrafficStyle = (status: string) => {
 
 const STATUS_KEYS = Object.keys(TRAFFIC_CONFIG);
 
-function DetailCard({  direction, speed, locationType }: any) {
+function DetailCard({  direction, speed, locationType, arrow = 'up' }: any) {
     const is12Classes = locationType === '12_kelas';
     const vehicles = is12Classes 
         ? Array.from({ length: 12 }, (_, i) => `Kelas ${i + 1}`)
@@ -528,6 +530,9 @@ function DetailCard({  direction, speed, locationType }: any) {
     else status = "Sangat Lancar";
 
     const style = getTrafficStyle(status);
+    const arrowPath = arrow === 'down' 
+        ? "M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" 
+        : "M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18";
 
     return (
         <div className="bg-white rounded-xl overflow-hidden text-gray-800 shadow-lg">
@@ -535,7 +540,7 @@ function DetailCard({  direction, speed, locationType }: any) {
                 <div className='flex items-center'>
                     <div className="p-2 rounded-lg text-black bg-white/20 backdrop-blur-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={4} stroke="currentColor" className="w-6 h-6">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d={arrowPath} />
                         </svg>
                     </div>
                     <span className="ml-2">{direction}</span>

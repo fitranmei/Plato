@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Video } from "lucide-react";
+import { X, Video, Pencil } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useModalContext } from "../components/ModalContext";
 
@@ -41,6 +41,7 @@ export default function KameraPage() {
   const [showModal, setShowModal] = useState(false); // Add Camera Modal
   const [showListModal, setShowListModal] = useState(false); // List Camera Modal
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     tipe: "",
@@ -109,6 +110,23 @@ export default function KameraPage() {
       setShowListModal(true);
   };
 
+  const openEditModal = (camera: Kamera) => {
+      setEditId(camera.id);
+      const arah1 = camera.zona_arah?.[0]?.arah || "";
+      const arah2 = camera.zona_arah?.[1]?.arah || "";
+      
+      setForm({
+          tipe: camera.tipe_kamera,
+          arah1: arah1,
+          arah2: arah2,
+          lokasi: camera.lokasi_penempatan,
+          lokasi_id: camera.lokasi_id,
+      });
+      
+      setShowListModal(false);
+      setShowModal(true);
+  };
+
   useEffect(() => {
     setIsModalOpen(showModal || showListModal);
   }, [showModal, showListModal, setIsModalOpen]);
@@ -150,22 +168,37 @@ export default function KameraPage() {
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch('/api/cameras', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(payload)
-        });
+        let res;
+        
+        if (editId) {
+            // Edit Mode
+            res = await fetch(`/api/cameras/${editId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+        } else {
+            // Create Mode
+            res = await fetch('/api/cameras', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+        }
 
         if (!res.ok) {
             const errData = await res.json();
-            throw new Error(errData.error || 'Gagal menyimpan kamera');
+            throw new Error(errData.error || (editId ? 'Gagal mengupdate kamera' : 'Gagal menyimpan kamera'));
         }
 
         setShowModal(false);
-        showNotification && showNotification('Kamera berhasil disimpan');
+        showNotification && showNotification(editId ? 'Kamera berhasil diupdate' : 'Kamera berhasil disimpan');
         
         setForm({
             tipe: "",
@@ -174,6 +207,7 @@ export default function KameraPage() {
             lokasi: "",
             lokasi_id: "",
         });
+        setEditId(null);
         
         // Refresh data (maybe redirect to list view or something, or nothing since we show location list now)
         // Perhaps open the list modal?
@@ -273,6 +307,7 @@ export default function KameraPage() {
                             <th className="px-4 py-3 border-b">ID Zona 1</th>
                             <th className="px-4 py-3 border-b">Arah 2</th>
                             <th className="px-4 py-3 border-b">ID Zona 2</th>
+                            <th className="px-4 py-3 border-b text-center">Aksi</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -285,11 +320,20 @@ export default function KameraPage() {
                                 <td className="px-4 py-3">{k.zona_arah?.[0]?.id_zona_arah || '-'}</td>
                                 <td className="px-4 py-3">{k.zona_arah?.[1]?.arah || '-'}</td>
                                 <td className="px-4 py-3">{k.zona_arah?.[1]?.id_zona_arah || '-'}</td>
+                                <td className="px-4 py-3 text-center">
+                                    <button 
+                                        onClick={() => openEditModal(k)}
+                                        className="p-1.5 border rounded hover:bg-gray-50 text-blue-600"
+                                        title="Edit Kamera"
+                                    >
+                                        <Pencil size={16} />
+                                    </button>
+                                </td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                                     Tidak ada data kamera di lokasi ini
                                 </td>
                             </tr>
@@ -301,6 +345,7 @@ export default function KameraPage() {
                         <button
                             onClick={() => {
                                 setShowListModal(false);
+                                setEditId(null);
                                 setForm({
                                     tipe: "",
                                     arah1: "",
@@ -343,7 +388,7 @@ export default function KameraPage() {
               </button>
 
               <h2 className="text-xl font-bold mb-8">
-                TAMBAH DATA KAMERA
+                {editId ? "EDIT DATA KAMERA" : "TAMBAH DATA KAMERA"}
               </h2>
 
               {/* FORM */}
@@ -369,7 +414,7 @@ export default function KameraPage() {
                   <label>Arah Jalur 1</label>
                   <input
                     className={inputClass}
-                    placeholder="Masukkan arah 1"
+                    placeholder="Contoh: Ke Palembang"
                     value={form.arah1}
                     onChange={(e) =>
                       setForm({ ...form, arah1: e.target.value })
@@ -381,7 +426,7 @@ export default function KameraPage() {
                   <label>Arah Jalur 2</label>
                   <input
                     className={inputClass}
-                    placeholder="Masukkan arah 2"
+                    placeholder="Contoh: Ke Jakarta"
                     value={form.arah2}
                     onChange={(e) =>
                       setForm({ ...form, arah2: e.target.value })

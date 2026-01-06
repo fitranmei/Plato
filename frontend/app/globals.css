@@ -14,8 +14,7 @@
   /* width: 100% !important; */
 }
 .leaflet-popup-content p {
-	margin: 17px 0;
-	margin: 10px 0 !important;
+	margin: 5px 0 !important;
 	}
 
 .leaflet-container a.leaflet-popup-close-button {

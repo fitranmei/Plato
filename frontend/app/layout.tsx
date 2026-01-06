@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={gabarito.variable}>
+      <body className={`${gabarito.variable} font-sans antialiased`}>
         <AppShell>
           {children}
         </AppShell>
