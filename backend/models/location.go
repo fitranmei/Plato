@@ -171,7 +171,21 @@ func UpdateLastDataReceived(locationID string, dataTimestamp time.Time) error {
 	return err
 }
 
-func CheckInactiveLocations(inactiveDuration time.Duration) error {
+func UpdateLocationOnDataReceived(locationID string, dataTimestamp time.Time) error {
+	collection := database.DB.Collection("locations")
+
+	update := bson.M{
+		"$set": bson.M{
+			"last_data_received": dataTimestamp,
+			"publik":             true,
+		},
+	}
+
+	_, err := collection.UpdateOne(context.Background(), bson.M{"_id": locationID}, update)
+	return err
+}
+
+func CheckInactiveLocations(inactiveDuration time.Duration) ([]Location, error) {
 	collection := database.DB.Collection("locations")
 
 	cutoffTime := time.Now().Add(-inactiveDuration)
@@ -184,20 +198,25 @@ func CheckInactiveLocations(inactiveDuration time.Duration) error {
 		},
 	}
 
+	var inactiveLocations []Location
+	cursor, err := collection.Find(context.Background(), filter)
+	if err != nil {
+		return nil, err
+	}
+	if err = cursor.All(context.Background(), &inactiveLocations); err != nil {
+		return nil, err
+	}
+
 	update := bson.M{
 		"$set": bson.M{
 			"publik": false,
 		},
 	}
 
-	result, err := collection.UpdateMany(context.Background(), filter, update)
+	_, err = collection.UpdateMany(context.Background(), filter, update)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if result.ModifiedCount > 0 {
-		fmt.Printf("Set %d locations to non-public due to inactivity\n", result.ModifiedCount)
-	}
-
-	return nil
+	return inactiveLocations, nil
 }

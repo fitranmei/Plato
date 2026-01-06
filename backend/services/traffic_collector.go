@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"log"
-	"math/rand"
 	"time"
 
 	"backend/database"
@@ -15,6 +14,7 @@ import (
 type TrafficCollectorService struct {
 	locationTickers map[string]*time.Ticker
 	stopChan        chan bool
+	dummyGenerator  *DummyDataGenerator
 }
 
 func NewTrafficCollectorService() *TrafficCollectorService {
@@ -25,23 +25,22 @@ func NewTrafficCollectorService() *TrafficCollectorService {
 }
 
 func (s *TrafficCollectorService) Start() {
-	log.Println("Traffic Collector Service started with per-location intervals")
+	log.Println("Traffic Collector Service started - waiting for camera data")
+	log.Println("Real-time analysis (MKJI 1997 / PKJI 2023) is calculated per incoming data")
+	log.Println("Daily LHR analysis runs at midnight")
+	log.Println("------------------------------------------------------------------------------")
 
-	locations, err := s.getActiveLocations()
-	if err != nil {
-		log.Printf("Error getting active locations: %v", err)
-		return
-	}
-
-	for _, location := range locations {
-		s.startLocationCollector(location)
-	}
-
-	go s.monitorLocationChanges()
+	s.dummyGenerator = NewDummyDataGenerator(s)
+	go s.dummyGenerator.Start()
 	go s.monitorInactiveLocations()
+	go s.scheduleDailyLHRAnalysis()
 }
 
 func (s *TrafficCollectorService) Stop() {
+	if s.dummyGenerator != nil {
+		s.dummyGenerator.Stop()
+	}
+
 	for locationID, ticker := range s.locationTickers {
 		if ticker != nil {
 			ticker.Stop()
@@ -52,91 +51,228 @@ func (s *TrafficCollectorService) Stop() {
 	s.stopChan <- true
 }
 
-func (s *TrafficCollectorService) startLocationCollector(location models.Location) {
-	if ticker, exists := s.locationTickers[location.ID]; exists && ticker != nil {
-		ticker.Stop()
-	}
+func (s *TrafficCollectorService) scheduleDailyLHRAnalysis() {
+	now := time.Now()
+	nextMidnight := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 5, 0, 0, now.Location())
+	durationUntilMidnight := nextMidnight.Sub(now)
 
-	intervalMinutes := location.Interval
-	if intervalMinutes <= 0 {
-		intervalMinutes = 1
-	}
+	log.Printf("Daily LHR analysis scheduled to run in %v", durationUntilMidnight)
 
-	log.Printf("Starting collector for location %s (%s) with interval: %d minutes",
-		location.ID, location.Nama_lokasi, intervalMinutes)
+	time.Sleep(durationUntilMidnight)
 
-	ticker := time.NewTicker(time.Duration(intervalMinutes) * time.Minute)
-	s.locationTickers[location.ID] = ticker
+	s.runDailyLHRAnalysis()
 
-	go func(loc models.Location, interval int) {
-		s.collectTrafficForLocation(loc, interval)
-
-		for {
-			select {
-			case <-ticker.C:
-				s.collectTrafficForLocation(loc, interval)
-			case <-s.stopChan:
-				log.Printf("Stopping collector for location: %s", loc.ID)
-				return
-			}
-		}
-	}(location, intervalMinutes)
-}
-
-func (s *TrafficCollectorService) monitorLocationChanges() {
-	monitorTicker := time.NewTicker(1 * time.Minute)
-	defer monitorTicker.Stop()
-
-	lastUpdateTime := make(map[string]time.Time)
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
 
 	for {
 		select {
-		case <-monitorTicker.C:
-			s.updateLocationCollectorsWithDynamicInterval(lastUpdateTime)
+		case <-ticker.C:
+			s.runDailyLHRAnalysis()
 		case <-s.stopChan:
+			log.Println("Stopping daily LHR analysis scheduler")
 			return
 		}
 	}
 }
 
-func (s *TrafficCollectorService) updateLocationCollectorsWithDynamicInterval(lastUpdateTime map[string]time.Time) {
+func (s *TrafficCollectorService) runDailyLHRAnalysis() {
+	log.Println("Running daily LHR analysis for all locations...")
+
 	locations, err := s.getActiveLocations()
 	if err != nil {
-		log.Printf("Error getting locations for update: %v", err)
+		log.Printf("Error getting active locations for LHR analysis: %v", err)
 		return
 	}
 
-	currentLocationIDs := make(map[string]bool)
-	currentTime := time.Now()
+	for _, location := range locations {
+		err := s.calculateDailyLHRForLocation(location)
+		if err != nil {
+			log.Printf("Error calculating daily LHR for location %s: %v", location.ID, err)
+		}
+	}
+}
+
+func (s *TrafficCollectorService) calculateDailyLHRForLocation(location models.Location) error {
+	now := time.Now()
+	yesterday := now.AddDate(0, 0, -1)
+	startOfYesterday := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 0, 0, 0, 0, yesterday.Location())
+	endOfYesterday := startOfYesterday.Add(24 * time.Hour)
+
+	trafficDataList, err := models.GetTrafficDataByLokasiID(location.ID, startOfYesterday, endOfYesterday)
+	if err != nil {
+		return err
+	}
+
+	if len(trafficDataList) == 0 {
+		log.Printf("No traffic data found for location %s yesterday", location.ID)
+		return nil
+	}
+
+	totalKendaraanHari := 0
+	for _, td := range trafficDataList {
+		totalKendaraanHari += td.TotalKendaraan
+	}
+
+	pkjiCount := models.HitungPKJICount(trafficDataList, location.Tipe_lokasi)
+	arusLaluLintasPKJI, jamPuncakPKJI := models.HitungVolumePKJI(trafficDataList, location.Tipe_lokasi)
+
+	lhrPKJI := float64(totalKendaraanHari)
+	lhrSKR := pkjiCount.TotalSkr
+
+	log.Printf("Daily LHR (PKJI2023) for %s (%s): Total=%d, SM=%d, KR=%d, KB=%d, KTB=%d, LHR=%.0f, LHRSKR=%.2f, JamPuncak=%s, ArusPuncak=%.2f skr/jam",
+		location.Nama_lokasi, startOfYesterday.Format("2006-01-02"),
+		totalKendaraanHari, pkjiCount.SM, pkjiCount.KR, pkjiCount.KB, pkjiCount.KTB,
+		lhrPKJI, lhrSKR, jamPuncakPKJI, arusLaluLintasPKJI)
+
+	mkjiCount := models.HitungMKJICount(trafficDataList, location.Tipe_lokasi)
+	arusLaluLintasMKJI, jamPuncakMKJI := models.HitungArusLaluLintas(trafficDataList, location.Tipe_lokasi)
+
+	lhrMKJI := models.HitungLHR(totalKendaraanHari, 1)
+	lhrSMP := models.HitungLHRSMP(mkjiCount, 1)
+
+	log.Printf("Daily LHR (MKJI1997) for %s (%s): Total=%d, MC=%d, LV=%d, HV=%d, UM=%d, LHR=%.0f, LHRSMP=%.2f, JamPuncak=%s, ArusPuncak=%.2f smp/jam",
+		location.Nama_lokasi, startOfYesterday.Format("2006-01-02"),
+		totalKendaraanHari, mkjiCount.MC, mkjiCount.LV, mkjiCount.HV, mkjiCount.UM,
+		lhrMKJI, lhrSMP, jamPuncakMKJI, arusLaluLintasMKJI)
+
+	return nil
+}
+
+func (s *TrafficCollectorService) runMKJIAnalysisForAllLocations() {
+	locations, err := s.getActiveLocations()
+	if err != nil {
+		log.Printf("Error getting active locations for analysis: %v", err)
+		return
+	}
 
 	for _, location := range locations {
-		currentLocationIDs[location.ID] = true
-
-		lastUpdate, exists := lastUpdateTime[location.ID]
-		intervalDuration := time.Duration(location.Interval) * time.Minute
-
-		shouldUpdate := !exists || currentTime.Sub(lastUpdate) >= intervalDuration
-
-		if shouldUpdate {
-			if _, collectorExists := s.locationTickers[location.ID]; !collectorExists {
-				log.Printf("New location detected: %s (interval: %d min), starting collector", location.ID, location.Interval)
-				s.startLocationCollector(location)
-			}
-			lastUpdateTime[location.ID] = currentTime
-			log.Printf("Location %s checked/updated (interval: %d min)", location.ID, location.Interval)
+		err := s.calculateAnalysisForLocation(location)
+		if err != nil {
+			log.Printf("Error calculating analysis for location %s: %v", location.ID, err)
 		}
 	}
+}
 
-	for locationID, ticker := range s.locationTickers {
-		if !currentLocationIDs[locationID] {
-			log.Printf("Location %s no longer active, stopping collector", locationID)
-			if ticker != nil {
-				ticker.Stop()
-			}
-			delete(s.locationTickers, locationID)
-			delete(lastUpdateTime, locationID)
-		}
+func (s *TrafficCollectorService) calculateAnalysisForLocation(location models.Location) error {
+	now := time.Now()
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour)
+
+	trafficDataList, err := models.GetTrafficDataByLokasiID(location.ID, startOfDay, endOfDay)
+	if err != nil {
+		return err
 	}
+
+	if len(trafficDataList) == 0 {
+		log.Printf("No traffic data found for location %s today", location.ID)
+		return nil
+	}
+
+	totalKendaraanHari := 0
+	for _, td := range trafficDataList {
+		totalKendaraanHari += td.TotalKendaraan
+	}
+
+	err1 := s.calculateMKJI1997ForLocation(location, trafficDataList, totalKendaraanHari)
+	err2 := s.calculatePKJI2023ForLocation(location, trafficDataList, totalKendaraanHari)
+
+	if err1 != nil {
+		log.Printf("Error calculating MKJI 1997: %v", err1)
+	}
+	if err2 != nil {
+		log.Printf("Error calculating PKJI 2023: %v", err2)
+	}
+
+	return nil
+}
+
+func (s *TrafficCollectorService) calculateMKJI1997ForLocation(location models.Location, trafficDataList []models.TrafficData, totalKendaraanHari int) error {
+	mkjiCount := models.HitungMKJICount(trafficDataList, location.Tipe_lokasi)
+
+	arusLaluLintas, jamPuncak := models.HitungArusLaluLintas(trafficDataList, location.Tipe_lokasi)
+
+	kapasitasDasar := models.GetKapasitasDasar(location.Tipe_arah, location.Tipe_lokasi)
+	fcw := models.GetFCW(location.Lebar_jalur, location.Tipe_arah)
+	fcsp := models.GetFCSP(location.Persentase, location.Tipe_arah)
+
+	var fcsf, fccs float64
+	var kapasitas float64
+
+	switch location.Tipe_lokasi {
+	case "perkotaan":
+		fcsf = models.GetFCSF(location.Tipe_hambatan, location.Kelas_hambatan, 1.5)
+		fccs = models.GetFCCS(location.Ukuran_kota)
+		kapasitas = kapasitasDasar * fcw * fcsp * fcsf * fccs
+	case "luar_kota", "12_kelas":
+		fcsf = models.GetFCSF(location.Tipe_hambatan, location.Kelas_hambatan, 1.5)
+		fccs = 1.0
+		kapasitas = kapasitasDasar * fcw * fcsp * fcsf
+	case "bebas_hambatan":
+		fcsf = 1.0
+		fccs = 1.0
+		kapasitas = kapasitasDasar * fcw * fcsp
+	default:
+		fcsf = models.GetFCSF(location.Tipe_hambatan, location.Kelas_hambatan, 1.5)
+		fccs = models.GetFCCS(location.Ukuran_kota)
+		kapasitas = kapasitasDasar * fcw * fcsp * fcsf * fccs
+	}
+
+	derajatKejenuhan := 0.0
+	if kapasitas > 0 {
+		derajatKejenuhan = arusLaluLintas / kapasitas
+	}
+
+	tingkatPelayanan, _ := models.GetTingkatPelayanan(derajatKejenuhan)
+
+	lhr := models.HitungLHR(totalKendaraanHari, 1)
+	lhrSMP := models.HitungLHRSMP(mkjiCount, 1)
+
+	log.Printf("MKJI1997 Analysis for %s: MC=%d, LV=%d, HV=%d, UM=%d, DS=%.3f, LoS=%s, LHR=%.0f, LHRSMP=%.2f, JamPuncak=%s",
+		location.Nama_lokasi, mkjiCount.MC, mkjiCount.LV, mkjiCount.HV, mkjiCount.UM,
+		derajatKejenuhan, tingkatPelayanan, lhr, lhrSMP, jamPuncak)
+
+	return nil
+}
+
+func (s *TrafficCollectorService) calculatePKJI2023ForLocation(location models.Location, trafficDataList []models.TrafficData, totalKendaraanHari int) error {
+	pkjiCount := models.HitungPKJICount(trafficDataList, location.Tipe_lokasi)
+	volumeLaluLintas, jamPuncak := models.HitungVolumePKJI(trafficDataList, location.Tipe_lokasi)
+	kapasitas, _, _, _, _, _ := models.HitungKapasitasPKJI(location)
+
+	derajatKejenuhan := 0.0
+	if kapasitas > 0 {
+		derajatKejenuhan = volumeLaluLintas / kapasitas
+	}
+
+	tingkatPelayanan, _ := models.GetTingkatPelayananPKJI(derajatKejenuhan)
+
+	lhr := float64(totalKendaraanHari)
+	lhrSKR := pkjiCount.TotalSkr
+
+	log.Printf("PKJI2023 Analysis for %s: SM=%d, KR=%d, KB=%d, KTB=%d, DJ=%.3f, LoS=%s, LHR=%.0f, LHRSKR=%.2f, JamPuncak=%s",
+		location.Nama_lokasi, pkjiCount.SM, pkjiCount.KR, pkjiCount.KB, pkjiCount.KTB,
+		derajatKejenuhan, tingkatPelayanan, lhr, lhrSKR, jamPuncak)
+
+	return nil
+}
+
+func (s *TrafficCollectorService) ProcessIncomingCameraData(xmlData string) (*models.TrafficData, error) {
+	trafficData, err := models.ProcessCameraData(xmlData)
+	if err != nil {
+		return nil, err
+	}
+
+	err = models.UpdateLastDataReceived(trafficData.LokasiID, trafficData.Timestamp)
+	if err != nil {
+		log.Printf("Warning: Failed to update last data received for location %s: %v",
+			trafficData.LokasiID, err)
+	}
+
+	log.Printf("Processed camera data for location %s: %d vehicles",
+		trafficData.NamaLokasi, trafficData.TotalKendaraan)
+
+	return trafficData, nil
 }
 
 func (s *TrafficCollectorService) getActiveLocations() ([]models.Location, error) {
@@ -154,73 +290,7 @@ func (s *TrafficCollectorService) getActiveLocations() ([]models.Location, error
 		return nil, err
 	}
 
-	log.Printf("Active public locations found: %d locations", len(locations))
-	for _, loc := range locations {
-		log.Printf("- %s (%s) - Publik: %v", loc.ID, loc.Nama_lokasi, loc.Publik)
-	}
-
 	return locations, nil
-}
-
-func (s *TrafficCollectorService) collectTrafficForLocation(location models.Location, intervalMinutes int) error {
-	if location.ID != "LOC-00001" {
-		log.Printf("Skipping data generation for location %s (only LOC-00001 gets dummy data)", location.ID)
-		return nil
-	}
-
-	cameras, err := s.getCamerasByLokasiID(location.ID)
-	if err != nil {
-		return err
-	}
-
-	if len(cameras) == 0 {
-		log.Printf("No cameras found for location %s", location.ID)
-		return nil
-	}
-
-	klasifikasiList, err := s.getKlasifikasiByTipeLokasi(location.Tipe_lokasi)
-	if err != nil {
-		return err
-	}
-
-	zonaArahDataMap := make(map[string]*models.TrafficZonaArahData)
-
-	for _, camera := range cameras {
-		log.Printf("Generating traffic data for camera %s", camera.ID)
-		for _, zonaArah := range camera.ZonaArah {
-			kelasDataList := s.generateTrafficDataForZonaArah(klasifikasiList)
-
-			totalKendaraan := 0
-			for _, kd := range kelasDataList {
-				totalKendaraan += kd.JumlahKendaraan
-			}
-
-			zonaArahDataMap[zonaArah.IDZonaArah] = &models.TrafficZonaArahData{
-				IDZonaArah:     zonaArah.IDZonaArah,
-				NamaArah:       zonaArah.Arah,
-				KelasData:      kelasDataList,
-				TotalKendaraan: totalKendaraan,
-			}
-		}
-	}
-
-	zonaArahDataList := make([]models.TrafficZonaArahData, 0, len(zonaArahDataMap))
-	for _, data := range zonaArahDataMap {
-		zonaArahDataList = append(zonaArahDataList, *data)
-	}
-
-	trafficData, err := models.CreateTrafficData(location.ID, zonaArahDataList, intervalMinutes)
-	if err != nil {
-		return err
-	}
-
-	err = models.UpdateLastDataReceived(location.ID, trafficData.Timestamp)
-	if err != nil {
-		log.Printf("Warning: Failed to update last data received for location %s: %v", location.ID, err)
-	}
-
-	log.Printf("Traffic data created for location %s (%s)", location.ID, location.Nama_lokasi)
-	return nil
 }
 
 func (s *TrafficCollectorService) getCamerasByLokasiID(lokasiID string) ([]models.Camera, error) {
@@ -255,27 +325,6 @@ func (s *TrafficCollectorService) getKlasifikasiByTipeLokasi(tipeLokasi string) 
 	return klasifikasiList, nil
 }
 
-// nganu dummy data otomatis
-func (s *TrafficCollectorService) generateTrafficDataForZonaArah(klasifikasiList []models.KlasifikasiKendaraan) []models.TrafficKelasDetail {
-	kelasDataList := make([]models.TrafficKelasDetail, 0, len(klasifikasiList))
-
-	for _, klasifikasi := range klasifikasiList {
-		jumlahKendaraan := rand.Intn(51)
-
-		kecepatanRataRata := 40.0 + rand.Float64()*40.0
-
-		kelasDataList = append(kelasDataList, models.TrafficKelasDetail{
-			IDKlasifikasi:     klasifikasi.ID,
-			NamaKelas:         klasifikasi.NamaKelas,
-			Kelas:             klasifikasi.Kelas,
-			JumlahKendaraan:   jumlahKendaraan,
-			KecepatanRataRata: kecepatanRataRata,
-		})
-	}
-
-	return kelasDataList
-}
-
 func (s *TrafficCollectorService) CleanupOldData(retentionDays int) {
 	log.Printf("Cleaning up traffic data older than %d days", retentionDays)
 
@@ -296,14 +345,135 @@ func (s *TrafficCollectorService) monitorInactiveLocations() {
 	for {
 		select {
 		case <-ticker.C:
-			// nganu berapa lama lokasi tidak aktif
-			err := models.CheckInactiveLocations(20 * time.Minute)
+			inactiveLocations, err := models.CheckInactiveLocations(10 * time.Minute)
 			if err != nil {
 				log.Printf("Error checking inactive locations: %v", err)
+				continue
 			}
+
+			onlineLocations, err := s.getActiveLocations()
+			if err != nil {
+				log.Printf("Error getting active locations: %v", err)
+				continue
+			}
+
+			log.Printf("Online Lokasi: %d", len(onlineLocations))
+			if len(onlineLocations) > 0 {
+				for _, loc := range onlineLocations {
+					log.Printf("- %s (%s)", loc.Nama_lokasi, loc.ID)
+				}
+			} else {
+				log.Printf("(tidak ada)")
+			}
+			log.Println("")
+			log.Printf("Offline Lokasi: %d", len(inactiveLocations))
+			if len(inactiveLocations) > 0 {
+				for _, loc := range inactiveLocations {
+					log.Printf("- %s (%s)", loc.Nama_lokasi, loc.ID)
+				}
+			} else {
+				log.Printf("(tidak ada)")
+			}
+			log.Println("---------------------------------------")
 		case <-s.stopChan:
 			log.Println("Stopping inactive location monitor")
 			return
 		}
 	}
+}
+
+func (s *TrafficCollectorService) GetLocationTrafficSummary(lokasiID string, startTime, endTime time.Time) (*TrafficSummary, error) {
+	location, err := models.GetLocationByID(lokasiID)
+	if err != nil {
+		return nil, err
+	}
+
+	trafficDataList, err := models.GetTrafficDataByLokasiID(lokasiID, startTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(trafficDataList) == 0 {
+		return &TrafficSummary{
+			LokasiID:   lokasiID,
+			NamaLokasi: location.Nama_lokasi,
+			StartTime:  startTime,
+			EndTime:    endTime,
+			DataCount:  0,
+		}, nil
+	}
+
+	mkjiCount := models.HitungMKJICount(trafficDataList, location.Tipe_lokasi)
+	arusLaluLintas, jamPuncak := models.HitungArusLaluLintas(trafficDataList, location.Tipe_lokasi)
+
+	kapasitasDasar := models.GetKapasitasDasar(location.Tipe_arah, location.Tipe_lokasi)
+	fcw := models.GetFCW(location.Lebar_jalur, location.Tipe_arah)
+	fcsp := models.GetFCSP(location.Persentase, location.Tipe_arah)
+
+	var fcsf, fccs float64
+	var kapasitas float64
+
+	switch location.Tipe_lokasi {
+	case "perkotaan":
+		fcsf = models.GetFCSF(location.Tipe_hambatan, location.Kelas_hambatan, 1.5)
+		fccs = models.GetFCCS(location.Ukuran_kota)
+		kapasitas = kapasitasDasar * fcw * fcsp * fcsf * fccs
+
+	case "luar_kota", "12_kelas":
+		fcsf = models.GetFCSF(location.Tipe_hambatan, location.Kelas_hambatan, 1.5)
+		fccs = 1.0
+		kapasitas = kapasitasDasar * fcw * fcsp * fcsf
+
+	case "bebas_hambatan":
+		fcsf = 1.0
+		fccs = 1.0
+		kapasitas = kapasitasDasar * fcw * fcsp
+
+	default:
+		fcsf = models.GetFCSF(location.Tipe_hambatan, location.Kelas_hambatan, 1.5)
+		fccs = models.GetFCCS(location.Ukuran_kota)
+		kapasitas = kapasitasDasar * fcw * fcsp * fcsf * fccs
+	}
+
+	derajatKejenuhan := 0.0
+	if kapasitas > 0 {
+		derajatKejenuhan = arusLaluLintas / kapasitas
+	}
+
+	tingkatPelayanan, _ := models.GetTingkatPelayanan(derajatKejenuhan)
+
+	totalKendaraan := 0
+	for _, td := range trafficDataList {
+		totalKendaraan += td.TotalKendaraan
+	}
+
+	return &TrafficSummary{
+		LokasiID:         lokasiID,
+		NamaLokasi:       location.Nama_lokasi,
+		StartTime:        startTime,
+		EndTime:          endTime,
+		DataCount:        len(trafficDataList),
+		TotalKendaraan:   totalKendaraan,
+		MKJICount:        mkjiCount,
+		ArusLaluLintas:   arusLaluLintas,
+		JamPuncak:        jamPuncak,
+		Kapasitas:        kapasitas,
+		DerajatKejenuhan: derajatKejenuhan,
+		TingkatPelayanan: tingkatPelayanan,
+	}, nil
+}
+
+type TrafficSummary struct {
+	LokasiID         string           `json:"lokasi_id"`
+	NamaLokasi       string           `json:"nama_lokasi"`
+	StartTime        time.Time        `json:"start_time"`
+	EndTime          time.Time        `json:"end_time"`
+	DataCount        int              `json:"data_count"`
+	TotalKendaraan   int              `json:"total_kendaraan"`
+	MKJICount        models.MKJICount `json:"mkji_count"`
+	ArusLaluLintas   float64          `json:"arus_lalu_lintas"`
+	JamPuncak        string           `json:"jam_puncak"`
+	Kapasitas        float64          `json:"kapasitas"`
+	DerajatKejenuhan float64          `json:"derajat_kejenuhan"`
+	TingkatPelayanan string           `json:"tingkat_pelayanan"`
 }

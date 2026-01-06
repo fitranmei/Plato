@@ -26,6 +26,44 @@ type TrafficZonaArahData struct {
 	TotalKendaraan int                  `bson:"total_kendaraan" json:"total_kendaraan"`
 }
 
+type TrafficMKJIAnalysis struct {
+	MC               int     `bson:"mc" json:"mc"`                               // Motorcycle (sepeda motor)
+	LV               int     `bson:"lv" json:"lv"`                               // Light Vehicle (kendaraan ringan)
+	HV               int     `bson:"hv" json:"hv"`                               // Heavy Vehicle (kendaraan berat)
+	UM               int     `bson:"um" json:"um"`                               // Unmotorized (tidak bermotor)
+	TotalMotor       int     `bson:"total_motor" json:"total_motor"`             // MC + LV + HV
+	TotalSMP         float64 `bson:"total_smp" json:"total_smp"`                 // Satuan Mobil Penumpang
+	ArusSMP          float64 `bson:"arus_smp" json:"arus_smp"`                   // Q (smp/jam) - dikonversi ke per jam
+	KapasitasDasar   float64 `bson:"kapasitas_dasar" json:"kapasitas_dasar"`     // Co
+	FCW              float64 `bson:"fcw" json:"fcw"`                             // Faktor lebar jalur
+	FCSP             float64 `bson:"fcsp" json:"fcsp"`                           // Faktor pemisah arah
+	FCSF             float64 `bson:"fcsf" json:"fcsf"`                           // Faktor hambatan samping
+	FCCS             float64 `bson:"fccs" json:"fccs"`                           // Faktor ukuran kota
+	Kapasitas        float64 `bson:"kapasitas" json:"kapasitas"`                 // C = Co × FCW × FCSP × FCSF × FCCS
+	DerajatKejenuhan float64 `bson:"derajat_kejenuhan" json:"derajat_kejenuhan"` // DS = Q/C
+	TingkatPelayanan string  `bson:"tingkat_pelayanan" json:"tingkat_pelayanan"` // Level of Service (A-F)
+	Keterangan       string  `bson:"keterangan" json:"keterangan"`               // Deskripsi LoS
+}
+
+type TrafficPKJIAnalysis struct {
+	SM               int     `bson:"sm" json:"sm"`                               // Sepeda Motor
+	KR               int     `bson:"kr" json:"kr"`                               // Kendaraan Ringan
+	KB               int     `bson:"kb" json:"kb"`                               // Kendaraan Berat
+	KTB              int     `bson:"ktb" json:"ktb"`                             // Kendaraan Tidak Bermotor
+	TotalMotor       int     `bson:"total_motor" json:"total_motor"`             // SM + KR + KB
+	TotalSKR         float64 `bson:"total_skr" json:"total_skr"`                 // Satuan Kendaraan Ringan
+	VolumeSKR        float64 `bson:"volume_skr" json:"volume_skr"`               // V (skr/jam)
+	KapasitasDasar   float64 `bson:"kapasitas_dasar" json:"kapasitas_dasar"`     // C0
+	FCLJ             float64 `bson:"fclj" json:"fclj"`                           // Faktor lebar jalur
+	FCPA             float64 `bson:"fcpa" json:"fcpa"`                           // Faktor pemisahan arah
+	FCHS             float64 `bson:"fchs" json:"fchs"`                           // Faktor hambatan samping
+	FCUK             float64 `bson:"fcuk" json:"fcuk"`                           // Faktor ukuran kota
+	Kapasitas        float64 `bson:"kapasitas" json:"kapasitas"`                 // C = C0 × FCLJ × FCPA × FCHS × FCUK
+	DerajatKejenuhan float64 `bson:"derajat_kejenuhan" json:"derajat_kejenuhan"` // DJ = V/C
+	TingkatPelayanan string  `bson:"tingkat_pelayanan" json:"tingkat_pelayanan"` // Level of Service (A-F)
+	Keterangan       string  `bson:"keterangan" json:"keterangan"`               // Deskripsi LoS
+}
+
 type TrafficData struct {
 	ID             string                `bson:"_id" json:"id"`
 	LokasiID       string                `bson:"lokasi_id" json:"lokasi_id"`
@@ -35,6 +73,9 @@ type TrafficData struct {
 	ZonaArahData   []TrafficZonaArahData `bson:"zona_arah_data" json:"zona_arah_data"`
 	TotalKendaraan int                   `bson:"total_kendaraan" json:"total_kendaraan"`
 	IntervalMenit  int                   `bson:"interval_menit" json:"interval_menit"`
+	RawDataID      string                `bson:"raw_data_id,omitempty" json:"raw_data_id,omitempty"`
+	MKJIAnalysis   *TrafficMKJIAnalysis  `bson:"mkji_analysis" json:"mkji_analysis"`
+	PKJIAnalysis   *TrafficPKJIAnalysis  `bson:"pkji_analysis" json:"pkji_analysis"`
 }
 
 func NextTrafficDataID() (string, error) {
