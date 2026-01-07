@@ -86,7 +86,7 @@ func SaveRawData(lokasiID string, cameraID string, timestamp time.Time, zonaData
 		ZonaData:       zonaData,
 		TotalKendaraan: totalKendaraan,
 		IsProcessed:    false,
-		CreatedAt:      time.Now(),
+		CreatedAt:      time.Now().Add(7 * time.Hour),
 	}
 
 	_, err = collection.InsertOne(context.Background(), rawData)

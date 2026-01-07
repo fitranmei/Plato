@@ -493,7 +493,7 @@ func CreatePKJIAnalysis(lokasiID string, startTime, endTime time.Time) (*PKJIAna
 		TipeArah:           location.Tipe_arah,
 		Tanggal:            startTime,
 		PeriodeHari:        jumlahHari,
-		Timestamp:          time.Now(),
+		Timestamp:          time.Now().Add(7 * time.Hour),
 		PKJICount:          pkjiCount,
 		TotalKendaraanHari: totalKendaraanHari,
 		LHRT:               lhrt,

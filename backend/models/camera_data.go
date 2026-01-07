@@ -160,13 +160,42 @@ func ConvertCameraDataToTrafficData(cameraData *CameraXMLData, camera *Camera) (
 
 	intervalMenit := cameraData.Message.Body.IntervalTime / 60
 	if intervalMenit <= 0 {
-		intervalMenit = 5 // Default 5 menit
+		intervalMenit = 5
 	}
 
-	timestamp := time.Now()
+	var timestamp time.Time
+
 	if cameraData.Message.Body.Utc != "" && cameraData.Message.Body.Utc != "$utcVar" {
-		if utcTime, err := strconv.ParseInt(cameraData.Message.Body.Utc, 10, 64); err == nil {
-			timestamp = time.Unix(utcTime, 0)
+		utcValue := cameraData.Message.Body.Utc
+
+		var zoneOffset int64
+		var parsed bool
+
+		if offset, err := strconv.ParseInt(utcValue, 10, 64); err == nil && offset >= -12 && offset <= 14 {
+			zoneOffset = offset
+			parsed = true
+		} else if len(utcValue) >= 4 && (utcValue[:3] == "utc" || utcValue[:3] == "UTC") {
+			if offset, err := strconv.ParseInt(utcValue[3:], 10, 64); err == nil && offset >= -12 && offset <= 14 {
+				zoneOffset = offset
+				parsed = true
+			}
+		}
+
+		if parsed {
+			offsetDuration := time.Duration(zoneOffset * int64(time.Hour))
+			timestamp = time.Now().UTC().Add(offsetDuration)
+		} else {
+			timestamp = time.Now().UTC()
+			if location.Zona_waktu != 0 {
+				offsetDuration := time.Duration(location.Zona_waktu * float64(time.Hour))
+				timestamp = timestamp.Add(offsetDuration)
+			}
+		}
+	} else {
+		timestamp = time.Now().UTC()
+		if location.Zona_waktu != 0 {
+			offsetDuration := time.Duration(location.Zona_waktu * float64(time.Hour))
+			timestamp = timestamp.Add(offsetDuration)
 		}
 	}
 
@@ -205,7 +234,9 @@ func SaveCameraTrafficData(trafficData *TrafficData) error {
 	log.Printf("Saved traffic data from camera: ID=%s, Location=%s, Total=%d vehicles",
 		trafficData.ID, trafficData.NamaLokasi, trafficData.TotalKendaraan)
 
-	err = UpdateLocationOnDataReceived(trafficData.LokasiID, trafficData.Timestamp)
+	// MongoDB menyimpan waktu dalam UTC, jadi kita simpan waktu lokal (UTC+7)
+	localTime := time.Now().Add(7 * time.Hour)
+	err = UpdateLocationOnDataReceived(trafficData.LokasiID, localTime)
 	if err != nil {
 		log.Printf("Warning: failed to update location status: %v", err)
 	}
@@ -273,23 +304,45 @@ func SaveRawDataFromCamera(cameraData *CameraXMLData, camera *Camera) (*TrafficR
 	}
 
 	var timestamp time.Time
+
 	if cameraData.Message.Body.Utc != "" && cameraData.Message.Body.Utc != "$utcVar" {
-		if utcTime, err := strconv.ParseInt(cameraData.Message.Body.Utc, 10, 64); err == nil {
-			timestamp = time.Unix(utcTime, 0)
-			log.Printf("Raw data timestamp: Using UTC from XML")
+		utcValue := cameraData.Message.Body.Utc
+
+		var zoneOffset int64
+		var parsed bool
+
+		if offset, err := strconv.ParseInt(utcValue, 10, 64); err == nil && offset >= -12 && offset <= 14 {
+			zoneOffset = offset
+			parsed = true
+		} else if len(utcValue) >= 4 && (utcValue[:3] == "utc" || utcValue[:3] == "UTC") {
+			if offset, err := strconv.ParseInt(utcValue[3:], 10, 64); err == nil && offset >= -12 && offset <= 14 {
+				zoneOffset = offset
+				parsed = true
+			}
+		}
+
+		if parsed {
+			offsetDuration := time.Duration(zoneOffset * int64(time.Hour))
+			timestamp = time.Now().UTC().Add(offsetDuration)
+			log.Printf("Raw data timestamp: Using server time at UTC%+d", zoneOffset)
 		} else {
-			timestamp = time.Now()
+			timestamp = time.Now().UTC()
+			if location.Zona_waktu != 0 {
+				offsetDuration := time.Duration(location.Zona_waktu * float64(time.Hour))
+				timestamp = timestamp.Add(offsetDuration)
+				log.Printf("Raw data timestamp: Invalid Utc format, using server time + zona_waktu from location (%.1f)", location.Zona_waktu)
+			} else {
+				log.Printf("Raw data timestamp: Invalid Utc format, using server UTC time")
+			}
 		}
 	} else {
+		timestamp = time.Now().UTC()
 		if location.Zona_waktu != 0 {
-			offsetSeconds := int(location.Zona_waktu * 3600)
-			loc := time.FixedZone(fmt.Sprintf("UTC%+.1f", location.Zona_waktu), offsetSeconds)
-			timestamp = time.Now().UTC().In(loc)
-			log.Printf("Raw data timestamp: Using Zona_waktu from Location database = %.1f (offset: %d seconds)",
-				location.Zona_waktu, offsetSeconds)
+			offsetDuration := time.Duration(location.Zona_waktu * float64(time.Hour))
+			timestamp = timestamp.Add(offsetDuration)
+			log.Printf("Raw data timestamp: Using server time + zona_waktu from location (%.1f)", location.Zona_waktu)
 		} else {
-			timestamp = time.Now()
-			log.Printf("Raw data timestamp: Location Zona_waktu is 0, using server time")
+			log.Printf("Raw data timestamp: Using server UTC time")
 		}
 	}
 
@@ -400,12 +453,12 @@ func CalculateRealTimeMKJI(trafficData *TrafficData, lokasiID string) (*TrafficM
 
 	case "luar_kota", "12_kelas":
 		fcsf = GetFCSF(location.Tipe_hambatan, location.Kelas_hambatan, 1.5)
-		fccs = 1.0 
+		fccs = 1.0
 		kapasitas = kapasitasDasar * fcw * fcsp * fcsf
 
 	case "bebas_hambatan":
-		fcsf = 1.0 
-		fccs = 1.0  
+		fcsf = 1.0
+		fccs = 1.0
 		kapasitas = kapasitasDasar * fcw * fcsp
 
 	default:

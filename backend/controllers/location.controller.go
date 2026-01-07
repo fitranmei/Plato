@@ -123,8 +123,8 @@ func CreateLocation(c *fiber.Ctx) error {
 		Publik:           req.Publik,
 		Hide_lokasi:      req.Hide_lokasi,
 		Keterangan:       req.Keterangan,
-		Timestamp:        time.Now(),
-		LastDataReceived: time.Now(),
+		Timestamp:        time.Now().Add(7 * time.Hour),
+		LastDataReceived: time.Now().Add(7 * time.Hour),
 	}
 
 	_, err = database.DB.Collection("locations").InsertOne(context.Background(), location)

@@ -11,8 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
-// GetRawDataByID retrieves a single raw data by ID
-// GET /api/traffic-raw-data/:id
 func GetRawDataByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -30,8 +28,6 @@ func GetRawDataByID(c *fiber.Ctx) error {
 	})
 }
 
-// GetRawDataByLokasiID retrieves raw data by location ID with time range
-// GET /api/traffic-raw-data/lokasi/:lokasi_id
 func GetRawDataByLokasiID(c *fiber.Ctx) error {
 	lokasiID := c.Params("lokasi_id")
 
@@ -82,8 +78,6 @@ func GetRawDataByLokasiID(c *fiber.Ctx) error {
 	})
 }
 
-// GetAllRawData retrieves all raw data with optional filters
-// GET /api/traffic-raw-data
 func GetAllRawData(c *fiber.Ctx) error {
 	lokasiID := c.Query("lokasi_id")
 	cameraID := c.Query("camera_id")
@@ -155,8 +149,6 @@ func GetAllRawData(c *fiber.Ctx) error {
 	})
 }
 
-// GetUnprocessedRawData retrieves unprocessed raw data
-// GET /api/traffic-raw-data/unprocessed
 func GetUnprocessedRawData(c *fiber.Ctx) error {
 	limitStr := c.Query("limit", "50")
 
@@ -183,8 +175,6 @@ func GetUnprocessedRawData(c *fiber.Ctx) error {
 	})
 }
 
-// DeleteRawData deletes a raw data by ID
-// DELETE /api/traffic-raw-data/:id
 func DeleteRawData(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -210,8 +200,6 @@ func DeleteRawData(c *fiber.Ctx) error {
 	})
 }
 
-// CleanupOldRawData deletes old raw data
-// DELETE /api/traffic-raw-data/cleanup
 func CleanupOldRawData(c *fiber.Ctx) error {
 	daysStr := c.Query("days", "30")
 	days, err := strconv.Atoi(daysStr)

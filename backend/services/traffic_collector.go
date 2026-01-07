@@ -11,6 +11,11 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
+const (
+	InactiveDuration = 10 * time.Minute
+	MonitorInterval  = 1 * time.Minute
+)
+
 type TrafficCollectorService struct {
 	locationTickers map[string]*time.Ticker
 	stopChan        chan bool
@@ -25,10 +30,11 @@ func NewTrafficCollectorService() *TrafficCollectorService {
 }
 
 func (s *TrafficCollectorService) Start() {
-	log.Println("Traffic Collector Service started - waiting for camera data")
-	log.Println("Real-time analysis (MKJI 1997 / PKJI 2023) is calculated per incoming data")
-	log.Println("Daily LHR analysis runs at midnight")
-	log.Println("------------------------------------------------------------------------------")
+	err := models.CheckInactiveLocations(InactiveDuration)
+	if err != nil {
+		log.Printf("Error checking inactive locations: %v", err)
+	}
+	s.logLocationStatus()
 
 	s.dummyGenerator = NewDummyDataGenerator(s)
 	go s.dummyGenerator.Start()
@@ -263,7 +269,9 @@ func (s *TrafficCollectorService) ProcessIncomingCameraData(xmlData string) (*mo
 		return nil, err
 	}
 
-	err = models.UpdateLastDataReceived(trafficData.LokasiID, trafficData.Timestamp)
+	// MongoDB menyimpan waktu dalam UTC, jadi kita simpan waktu lokal (UTC+7)
+	localTime := time.Now().Add(7 * time.Hour)
+	err = models.UpdateLastDataReceived(trafficData.LokasiID, localTime)
 	if err != nil {
 		log.Printf("Warning: Failed to update last data received for location %s: %v",
 			trafficData.LokasiID, err)
@@ -278,7 +286,7 @@ func (s *TrafficCollectorService) ProcessIncomingCameraData(xmlData string) (*mo
 func (s *TrafficCollectorService) getActiveLocations() ([]models.Location, error) {
 	collection := database.DB.Collection("locations")
 
-	filter := bson.M{"publik": true}
+	filter := bson.M{}
 
 	cursor, err := collection.Find(context.Background(), filter)
 	if err != nil {
@@ -339,47 +347,54 @@ func (s *TrafficCollectorService) CleanupOldData(retentionDays int) {
 }
 
 func (s *TrafficCollectorService) monitorInactiveLocations() {
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(MonitorInterval)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			inactiveLocations, err := models.CheckInactiveLocations(10 * time.Minute)
+			err := models.CheckInactiveLocations(InactiveDuration)
 			if err != nil {
 				log.Printf("Error checking inactive locations: %v", err)
-				continue
 			}
-
-			onlineLocations, err := s.getActiveLocations()
-			if err != nil {
-				log.Printf("Error getting active locations: %v", err)
-				continue
-			}
-
-			log.Printf("Online Lokasi: %d", len(onlineLocations))
-			if len(onlineLocations) > 0 {
-				for _, loc := range onlineLocations {
-					log.Printf("- %s (%s)", loc.Nama_lokasi, loc.ID)
-				}
-			} else {
-				log.Printf("(tidak ada)")
-			}
-			log.Println("")
-			log.Printf("Offline Lokasi: %d", len(inactiveLocations))
-			if len(inactiveLocations) > 0 {
-				for _, loc := range inactiveLocations {
-					log.Printf("- %s (%s)", loc.Nama_lokasi, loc.ID)
-				}
-			} else {
-				log.Printf("(tidak ada)")
-			}
-			log.Println("---------------------------------------")
+			s.logLocationStatus()
 		case <-s.stopChan:
 			log.Println("Stopping inactive location monitor")
 			return
 		}
 	}
+}
+
+func (s *TrafficCollectorService) logLocationStatus() {
+	collection := database.DB.Collection("locations")
+
+	cursorOnline, err := collection.Find(context.Background(), bson.M{"publik": true})
+	if err != nil {
+		log.Printf("Error getting online locations: %v", err)
+		return
+	}
+	var onlineLocations []models.Location
+	cursorOnline.All(context.Background(), &onlineLocations)
+
+	cursorOffline, err := collection.Find(context.Background(), bson.M{"publik": false})
+	if err != nil {
+		log.Printf("Error getting offline locations: %v", err)
+		return
+	}
+	var offlineLocations []models.Location
+	cursorOffline.All(context.Background(), &offlineLocations)
+
+	log.Println("---------------------------------------")
+	log.Printf("Online Lokasi: %d", len(onlineLocations))
+	for _, loc := range onlineLocations {
+		log.Printf("- %s (%s)", loc.Nama_lokasi, loc.ID)
+	}
+	log.Println("")
+	log.Printf("Offline Lokasi: %d", len(offlineLocations))
+	for _, loc := range offlineLocations {
+		log.Printf("- %s (%s)", loc.Nama_lokasi, loc.ID)
+	}
+	log.Println("---------------------------------------")
 }
 
 func (s *TrafficCollectorService) GetLocationTrafficSummary(lokasiID string, startTime, endTime time.Time) (*TrafficSummary, error) {

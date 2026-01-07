@@ -88,10 +88,11 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
+	localTime := time.Now().Add(7 * time.Hour)
 	_, err = database.DB.Collection("users").UpdateOne(
 		context.Background(),
 		bson.M{"_id": user.ID},
-		bson.M{"$set": bson.M{"last_login": time.Now()}},
+		bson.M{"$set": bson.M{"last_login": localTime}},
 	)
 	if err != nil {
 		log.Printf("Warning: Gagal mengupdate last login untuk user %s: %v", user.ID, err)
@@ -107,7 +108,7 @@ func Login(c *fiber.Ctx) error {
 	activeToken := models.ActiveToken{
 		Token:     token,
 		UserID:    user.ID,
-		CreatedAt: time.Now(),
+		CreatedAt: time.Now().Add(7 * time.Hour),
 	}
 	_, err = database.DB.Collection("active_tokens").InsertOne(context.Background(), activeToken)
 	if err != nil {

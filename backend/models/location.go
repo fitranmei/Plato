@@ -18,7 +18,7 @@ var (
 	PersentaseOptions    = []string{"50-50", "55-45", "60-40", "65-35", "70-30"}
 	TipeHambatanOptions  = []string{"bahu_jalan", "kereb"}
 	KelasHambatanOptions = []string{"VL", "L", "M", "H", "VH"}
-	IntervalOptions      = []int{1, 3, 5, 10, 15, 20, 30, 60}
+	IntervalOptions      = []int{60, 180, 300, 600, 900, 1200, 1800, 3600}
 	BalaiOptions         = []string{
 		"BPJN-I-Banda-Aceh",
 		"BBPJN-II-Medan",
@@ -185,10 +185,12 @@ func UpdateLocationOnDataReceived(locationID string, dataTimestamp time.Time) er
 	return err
 }
 
-func CheckInactiveLocations(inactiveDuration time.Duration) ([]Location, error) {
+func CheckInactiveLocations(inactiveDuration time.Duration) error {
 	collection := database.DB.Collection("locations")
 
-	cutoffTime := time.Now().Add(-inactiveDuration)
+	// MongoDB menyimpan dalam UTC, jadi kita bandingkan dengan waktu lokal (UTC+7)
+	localTime := time.Now().Add(7 * time.Hour)
+	cutoffTime := localTime.Add(-inactiveDuration)
 
 	filter := bson.M{
 		"publik": true,
@@ -198,25 +200,20 @@ func CheckInactiveLocations(inactiveDuration time.Duration) ([]Location, error) 
 		},
 	}
 
-	var inactiveLocations []Location
-	cursor, err := collection.Find(context.Background(), filter)
-	if err != nil {
-		return nil, err
-	}
-	if err = cursor.All(context.Background(), &inactiveLocations); err != nil {
-		return nil, err
-	}
-
 	update := bson.M{
 		"$set": bson.M{
 			"publik": false,
 		},
 	}
 
-	_, err = collection.UpdateMany(context.Background(), filter, update)
+	result, err := collection.UpdateMany(context.Background(), filter, update)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return inactiveLocations, nil
+	if result.ModifiedCount > 0 {
+		fmt.Printf("Set %d locations to non-public due to inactivity\n", result.ModifiedCount)
+	}
+
+	return nil
 }
