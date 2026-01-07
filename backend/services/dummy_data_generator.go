@@ -39,22 +39,22 @@ func (d *DummyDataGenerator) Start() {
 		return
 	}
 
-	intervalMinutes := location.Interval
-	if intervalMinutes <= 0 {
-		intervalMinutes = 5
+	intervalSeconds := location.Interval
+	if intervalSeconds <= 0 {
+		intervalSeconds = 300
 	}
 
-	log.Printf("Dummy data generator configured: %s (%s) - interval: %d minutes",
-		d.targetLocationID, location.Nama_lokasi, intervalMinutes)
+	log.Printf("Dummy data generator configured: %s (%s) - interval: %d seconds",
+		d.targetLocationID, location.Nama_lokasi, intervalSeconds)
 
 	camera := cameras[0]
 
-	d.generateAndSendDummyXML(camera, *location, intervalMinutes)
+	d.generateAndSendDummyXML(camera, *location, intervalSeconds)
 
-	d.ticker = time.NewTicker(time.Duration(intervalMinutes) * time.Minute)
+	d.ticker = time.NewTicker(time.Duration(intervalSeconds) * time.Second)
 	d.service.locationTickers[d.targetLocationID] = d.ticker
 
-	go d.run(camera, *location, intervalMinutes)
+	go d.run(camera, *location, intervalSeconds)
 }
 
 func (d *DummyDataGenerator) Stop() {
@@ -65,11 +65,11 @@ func (d *DummyDataGenerator) Stop() {
 	d.stopChan <- true
 }
 
-func (d *DummyDataGenerator) run(camera models.Camera, location models.Location, intervalMinutes int) {
+func (d *DummyDataGenerator) run(camera models.Camera, location models.Location, intervalSeconds int) {
 	for {
 		select {
 		case <-d.ticker.C:
-			d.generateAndSendDummyXML(camera, location, intervalMinutes)
+			d.generateAndSendDummyXML(camera, location, intervalSeconds)
 		case <-d.stopChan:
 			log.Printf("Dummy data generator stopped for %s", d.targetLocationID)
 			return
@@ -80,7 +80,7 @@ func (d *DummyDataGenerator) run(camera models.Camera, location models.Location,
 	}
 }
 
-func (d *DummyDataGenerator) generateAndSendDummyXML(camera models.Camera, location models.Location, intervalMinutes int) {
+func (d *DummyDataGenerator) generateAndSendDummyXML(camera models.Camera, location models.Location, intervalSeconds int) {
 	klasifikasiList, err := d.service.getKlasifikasiByTipeLokasi(location.Tipe_lokasi)
 	if err != nil || len(klasifikasiList) == 0 {
 		log.Printf("Dummy generator: Failed to get klasifikasi: %v", err)
@@ -91,8 +91,6 @@ func (d *DummyDataGenerator) generateAndSendDummyXML(camera models.Camera, locat
 	if numZones == 0 {
 		numZones = 1
 	}
-
-	intervalSeconds := intervalMinutes * 60
 
 	xmlData := fmt.Sprintf(`<Root>
 <API>%s</API>

@@ -18,7 +18,7 @@ var (
 	PersentaseOptions    = []string{"50-50", "55-45", "60-40", "65-35", "70-30"}
 	TipeHambatanOptions  = []string{"bahu_jalan", "kereb"}
 	KelasHambatanOptions = []string{"VL", "L", "M", "H", "VH"}
-	IntervalOptions      = []int{1, 3, 5, 10, 15, 20, 30, 60}
+	IntervalOptions      = []int{60, 180, 300, 600, 900, 1200, 1800, 3600}
 	BalaiOptions         = []string{
 		"BPJN-I-Banda-Aceh",
 		"BBPJN-II-Medan",
