@@ -78,8 +78,8 @@ export default function MapPicker({ locations = [], cameras = [], onMarkerClick 
         style={{ height: '100%', width: '100%' }}
       >
         <TileLayer
-          attribution='&copy; OpenStreetMap contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
 
         {locations.length > 0 ? (
@@ -88,13 +88,9 @@ export default function MapPicker({ locations = [], cameras = [], onMarkerClick 
                 const dir1 = cam?.zona_arah?.[0]?.arah || "Arah 1";
                 const dir2 = cam?.zona_arah?.[1]?.arah || "Arah 2";
                 
-                // MOCK status logic since data might not be available
-                // Pick semi-randomly or default to something based on ID if needed, 
-                // but since this is a UI demo request, we can just pick random defaults for variety 
-                // OR default to "Lancar" if no data.
-                // Assuming `loc.status1` and `loc.status2` might exist later.
-                const status1 = loc.status1 || STATUS_KEYS[Math.floor(Math.random() * STATUS_KEYS.length)];
-                const status2 = loc.status2 || STATUS_KEYS[Math.floor(Math.random() * STATUS_KEYS.length)];
+                // Use status and smp from enhanced location data (passed from parent)
+                const status1 = loc.status1 || "Lancar";
+                const status2 = loc.status2 || "Lancar";
 
                 const style1 = getTrafficStyle(status1);
                 const style2 = getTrafficStyle(status2);
@@ -114,7 +110,14 @@ export default function MapPicker({ locations = [], cameras = [], onMarkerClick 
                               </div>
                               <div className="text-right pr-6">
                                 <h3 className="text-sm font-bold m-0 leading-tight mt-2">{loc.nama_lokasi}</h3>
-                                <p className="text-[10px] opacity-90 m-0 mt-0.5">Update: {new Date(loc.timestamp || Date.now()).toLocaleTimeString()}</p>
+                                <p className="text-[10px] opacity-90 m-0 mt-0.5">
+                                  Update: {loc.timestamp ? new Date(loc.timestamp).toLocaleString('id-ID', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit',
+                                    hour12: false
+                                  }) + ' WIB' : '-'}
+                                </p>
                               </div>
                            </div>
                            
@@ -155,9 +158,9 @@ export default function MapPicker({ locations = [], cameras = [], onMarkerClick 
                                   <span className="text-gray-500 text-[10px] ml-0.5">SMP/jam</span>
                                 </div>
                                 <a 
-                                  href={!loc.hide_lokasi ? `/monitoring/${loc.id}` : "#"} 
-                                  className={`text-[10px] font-semibold py-1 px-3 rounded transition-colors no-underline ${!loc.hide_lokasi ? "bg-blue-500 text-white hover:bg-blue-600" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
-                                  style={{ color: !loc.hide_lokasi ? 'white' : undefined }}
+                                  href={`/monitoring/${loc.id}`} 
+                                  className="text-[10px] font-semibold py-1 px-3 rounded transition-colors no-underline bg-blue-500 text-white hover:bg-blue-600"
+                                  style={{ color: 'white' }}
                                 >
                                   Monitoring
                                 </a>

@@ -15,7 +15,7 @@ func SetupTrafficDataRoutes(router fiber.Router) {
 	traffic.Get("/", controllers.GetAllTrafficData)
 	traffic.Get("/:id", controllers.GetTrafficDataByID)
 	traffic.Get("/lokasi/:lokasi_id", controllers.GetTrafficDataByLokasiID)
-	traffic.Get("/lokasi/:lokasi_id/latest", middleware.RestrictTo("admin"), controllers.GetLatestTrafficDataByLokasiID)
+	traffic.Get("/lokasi/:lokasi_id/latest", controllers.GetLatestTrafficDataByLokasiID)
 	traffic.Delete("/:id", middleware.RestrictTo("admin", "superadmin"), controllers.DeleteTrafficData)
 	traffic.Delete("/cleanup", middleware.RestrictTo("admin", "superadmin"), controllers.CleanupOldTrafficData)
 

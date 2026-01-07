@@ -91,15 +91,9 @@ const HomeCard = ({
             <span className="text-gray-600 font-medium ml-1">SMP/jam</span>
           </div>
 
-          {isOnline ? (
-            <Link href={`/monitoring/${id}`} className={`font-semibold py-2 px-6 rounded-lg transition-colors shadow-sm bg-blue-500 hover:bg-blue-600 text-white`}>
-              Monitoring
-            </Link>
-          ) : (
-            <button disabled className={`font-semibold py-2 px-6 rounded-lg transition-colors shadow-sm bg-gray-300 text-gray-500 cursor-not-allowed`}>
-              Monitoring
-            </button>
-          )}
+          <Link href={`/monitoring/${id}`} className="font-semibold py-2 px-6 rounded-lg transition-colors shadow-sm bg-blue-500 hover:bg-blue-600 text-white">
+            Monitoring
+          </Link>
 
         </div>
       </div>
