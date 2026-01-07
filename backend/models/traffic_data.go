@@ -115,7 +115,7 @@ func CreateTrafficData(lokasiID string, zonaArahData []TrafficZonaArahData, inte
 		LokasiID:       lokasiID,
 		NamaLokasi:     location.Nama_lokasi,
 		TipeLokasi:     location.Tipe_lokasi,
-		Timestamp:      time.Now(),
+		Timestamp:      time.Now().Add(7 * time.Hour),
 		ZonaArahData:   zonaArahData,
 		TotalKendaraan: totalKendaraan,
 		IntervalMenit:  intervalMenit,
@@ -256,7 +256,7 @@ func ArchiveOldTrafficData(beforeTime time.Time) (int64, error) {
 			ZonaArahData:   td.ZonaArahData,
 			TotalKendaraan: td.TotalKendaraan,
 			IntervalMenit:  td.IntervalMenit,
-			ArchivedAt:     time.Now(),
+			ArchivedAt:     time.Now().Add(7 * time.Hour),
 			TahunArsip:     td.Timestamp.Year(),
 			BulanArsip:     int(td.Timestamp.Month()),
 		}

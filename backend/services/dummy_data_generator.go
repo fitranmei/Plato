@@ -25,11 +25,9 @@ func NewDummyDataGenerator(service *TrafficCollectorService) *DummyDataGenerator
 }
 
 func (d *DummyDataGenerator) Start() {
-	log.Printf("Starting dummy data generator for location: %s", d.targetLocationID)
-
 	location, err := models.GetLocationByID(d.targetLocationID)
 	if err != nil {
-		log.Printf("Dummy data generator: Location %s not found: %v", d.targetLocationID, err)
+		log.Printf("Dummy data generator: Location %s not found", d.targetLocationID)
 		return
 	}
 
@@ -44,8 +42,7 @@ func (d *DummyDataGenerator) Start() {
 		intervalSeconds = 300
 	}
 
-	log.Printf("Dummy data generator configured: %s (%s) - interval: %d seconds",
-		d.targetLocationID, location.Nama_lokasi, intervalSeconds)
+	log.Printf("Dummy data generator: %s - interval %ds", location.Nama_lokasi, intervalSeconds)
 
 	camera := cameras[0]
 
@@ -126,7 +123,8 @@ func (d *DummyDataGenerator) generateAndSendDummyXML(camera models.Camera, locat
 		return
 	}
 
-	err = models.UpdateLastDataReceived(location.ID, trafficData.Timestamp)
+	localTime := time.Now().Add(7 * time.Hour)
+	err = models.UpdateLastDataReceived(location.ID, localTime)
 	if err != nil {
 		log.Printf("Dummy generator: Warning - Failed to update last data received: %v", err)
 	}
