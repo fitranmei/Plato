@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useModalContext } from '../components/ModalContext';
 
 interface Location {
     id: string;
@@ -14,6 +15,7 @@ interface Location {
 }
 
 export default function LokasiPage() {
+    const { showNotification, setIsModalOpen: setGlobalModalOpen } = useModalContext();
     const [locations, setLocations] = useState<Location[]>([]);
     const [filteredLocations, setFilteredLocations] = useState<Location[]>([]);
     const [loading, setLoading] = useState(true);
@@ -32,6 +34,10 @@ export default function LokasiPage() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [step, setStep] = useState(1);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    
+    useEffect(() => {
+        setGlobalModalOpen(isModalOpen);
+    }, [isModalOpen, setGlobalModalOpen]);
     
     const provinces = [
         "BPJN-I-Banda-Aceh",
@@ -86,8 +92,7 @@ export default function LokasiPage() {
 
     const [form, setForm] = useState(initialForm);
 
-    // Notification & Confirmation State
-    const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+    // Confirmation State
     const [confirmation, setConfirmation] = useState<{ message: string, onConfirm: () => void } | null>(null);
 
     const inputClass = "w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#24345A]/30 text-sm";
@@ -249,7 +254,7 @@ export default function LokasiPage() {
             setStep(1);
         } catch (error) {
             console.error("Error fetching location details:", error);
-            setNotification({ message: "Gagal mengambil data lokasi", type: 'error' });
+            showNotification("Gagal mengambil data lokasi", 'error');
         }
     }
 
@@ -304,7 +309,7 @@ export default function LokasiPage() {
 
             const responseData = await res.json();
 
-            setNotification({ message: `Lokasi berhasil ${editingId ? 'diupdate' : 'disimpan'}`, type: 'success' });
+            showNotification(`Lokasi berhasil ${editingId ? 'diupdate' : 'disimpan'}`, 'success');
             closeModal();
             // Redirect to camera creation if new location
             if (!editingId && responseData.data?.nama_lokasi) {
@@ -318,7 +323,7 @@ export default function LokasiPage() {
                 setTimeout(() => window.location.reload(), 1500); 
             } 
         } catch (error: any) {
-            setNotification({ message: error.message, type: 'error' });
+            showNotification(error.message, 'error');
         }
     }
 
@@ -345,10 +350,10 @@ export default function LokasiPage() {
                         throw new Error(errData.error || 'Gagal menghapus lokasi');
                     }
 
-                    setNotification({ message: 'Lokasi berhasil dihapus', type: 'success' });
+                    showNotification('Lokasi berhasil dihapus', 'success');
                     setTimeout(() => window.location.reload(), 1500);
                 } catch (error: any) {
-                    setNotification({ message: error.message, type: 'error' });
+                    showNotification(error.message, 'error');
                 }
                 setConfirmation(null);
             }
@@ -623,36 +628,6 @@ export default function LokasiPage() {
                                     )}
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Notification Modal */}
-                {notification && (
-                    <div className="fixed inset-0 z-[60] flex items-center justify-center">
-                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setNotification(null)} />
-                        <div className="bg-white w-[400px] rounded-xl p-6 text-center relative shadow-2xl transform transition-all scale-100">
-                            <div className={`mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-4 ${notification.type === 'success' ? 'bg-green-100' : 'bg-red-100'}`}>
-                                {notification.type === 'success' ? (
-                                    <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                ) : (
-                                    <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                )}
-                            </div>
-                            <h3 className={`text-lg font-bold mb-2 ${notification.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>
-                                {notification.type === 'success' ? 'Berhasil!' : 'Gagal!'}
-                            </h3>
-                            <p className="text-gray-600 mb-6">{notification.message}</p>
-                            <button 
-                                onClick={() => setNotification(null)}
-                                className={`w-full py-3 rounded-lg font-semibold text-white transition-colors ${notification.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
-                            >
-                                OK
-                            </button>
                         </div>
                     </div>
                 )}

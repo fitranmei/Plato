@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useModalContext } from "../components/ModalContext";
 
 type User = {
   id: string;
@@ -15,6 +16,7 @@ type User = {
 
 export default function ManajemenUserPage() {
   const router = useRouter();
+  const { showNotification, setIsModalOpen: setGlobalModalOpen } = useModalContext();
   
   useEffect(() => {
     const role = localStorage.getItem('role');
@@ -37,8 +39,10 @@ export default function ManajemenUserPage() {
     role: "user",
     balai: "",
   });
-
-  const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  
+  useEffect(() => {
+    setGlobalModalOpen(showModal);
+  }, [showModal, setGlobalModalOpen]);
 
   const balaiOptions = [
     "BPJN-I-Banda-Aceh",
@@ -100,12 +104,12 @@ export default function ManajemenUserPage() {
 
   const handleSave = async () => {
     if (!form.username || !form.email || !form.password || !form.balai) {
-        setNotification({ message: "Semua field wajib diisi", type: 'error' });
+        showNotification("Semua field wajib diisi", 'error');
         return;
     }
 
     if (form.password !== form.confirm) {
-        setNotification({ message: "Password tidak cocok", type: 'error' });
+        showNotification("Password tidak cocok", 'error');
         return;
     }
 
@@ -137,7 +141,7 @@ export default function ManajemenUserPage() {
             throw new Error(data.error || 'Gagal menyimpan user');
         }
 
-        setNotification({ message: "User berhasil disimpan", type: 'success' });
+        showNotification("User berhasil disimpan", 'success');
         setShowModal(false);
         setForm({
             username: "",
@@ -149,7 +153,7 @@ export default function ManajemenUserPage() {
         });
         fetchUsers();
     } catch (error: any) {
-        setNotification({ message: error.message, type: 'error' });
+        showNotification(error.message, 'error');
     }
   };
 
@@ -342,36 +346,6 @@ export default function ManajemenUserPage() {
             </div>
           </div>
       )}
-
-      {/* Notification Modal */}
-      {notification && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center">
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setNotification(null)} />
-                <div className="bg-white w-[400px] rounded-xl p-6 text-center relative shadow-2xl transform transition-all scale-100">
-                    <div className={`mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-4 ${notification.type === 'success' ? 'bg-green-100' : 'bg-red-100'}`}>
-                        {notification.type === 'success' ? (
-                            <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                        ) : (
-                            <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        )}
-                    </div>
-                    <h3 className={`text-lg font-bold mb-2 ${notification.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>
-                        {notification.type === 'success' ? 'Berhasil!' : 'Gagal!'}
-                    </h3>
-                    <p className="text-gray-600 mb-6">{notification.message}</p>
-                    <button 
-                        onClick={() => setNotification(null)}
-                        className={`w-full py-3 rounded-lg font-semibold text-white transition-colors ${notification.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
-                    >
-                        OK
-                    </button>
-                </div>
-            </div>
-        )}
     </main>
   );
 }

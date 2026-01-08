@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
+import { useModalContext } from '../../components/ModalContext';
 import { AreaChart, Area, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useMonitoringData } from './hooks/useMonitoringData';
 import { DetailCard } from './components/DetailCard';
@@ -13,6 +14,7 @@ import { formatTimestampWithZone } from './utils/dateHelpers';
 
 export default function MonitoringPage() {
     const params = useParams();
+    const { showNotification } = useModalContext();
     const { 
         location, 
         cameraData, 
@@ -30,7 +32,7 @@ export default function MonitoringPage() {
 
     const handleExport = () => {
         if (!exportStartDate || !exportEndDate) {
-            alert("Harap pilih Tanggal Awal dan Tanggal Akhir terlebih dahulu.");
+            showNotification("Harap pilih Tanggal Awal dan Tanggal Akhir terlebih dahulu.", 'error');
             return;
         }
         
@@ -124,13 +126,23 @@ export default function MonitoringPage() {
                         )}
                     </div>
 
-                    <div className="bg-white rounded-xl shadow-lg h-full min-h-[400px] flex flex-col justify-end p-4 relative">
-                        <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                            <span className="text-xl font-semibold">Live Camera Feed (ID: {location.id})</span>
+                    <div className="bg-white rounded-xl shadow-lg h-full min-h-[400px] flex flex-col relative overflow-hidden">
+                        {/* YouTube Embed */}
+                        <div className="flex-1 relative">
+                            <iframe
+                                className="absolute inset-0 w-full h-full"
+                                src="https://www.youtube.com/embed/GcT5wjKr0UE?autoplay=1&mute=1&controls=1&rel=0"
+                                title="Live Camera Feed"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
                         </div>
-                        <p className="text-right text-gray-600 text-sm relative z-10">
-                            Update Terakhir: {formatTimestampWithZone(latestTrafficData?.timestamp || null, location.zona_waktu)}
-                        </p>
+                        {/* Footer with timestamp */}
+                        <div className="bg-white p-4 border-t border-gray-200">
+                            <p className="text-right text-gray-600 text-sm">
+                                Update Terakhir: {formatTimestampWithZone(latestTrafficData?.timestamp || null, (location as any).zona_waktu)}
+                            </p>
+                        </div>
                     </div>
                 </div>
 
