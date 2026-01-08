@@ -16,19 +16,6 @@ const LOS_TO_STATUS: Record<string, string> = {
   "F": "Macet Total"
 };
 
-// Check if location is offline based on last update time
-const isLocationOffline = (timestamp: string | undefined, intervalMinutes: number = 5): boolean => {
-  if (!timestamp) return true;
-  
-  const lastUpdate = new Date(timestamp);
-  const now = new Date();
-  const diffMs = now.getTime() - lastUpdate.getTime();
-  const diffMinutes = diffMs / (1000 * 60);
-  
-  // If no update for 2x interval, consider offline
-  return diffMinutes > (intervalMinutes * 2);
-};
-
 export default function UserPage() {
   const [locations, setLocations] = useState<any[]>([]);
   const [cameras, setCameras] = useState<any[]>([]);
@@ -111,14 +98,13 @@ export default function UserPage() {
            const traffic = trafficDataMap[loc.id];
            const losLevel = traffic?.mkji_analysis?.tingkat_pelayanan || traffic?.pkji_analysis?.tingkat_pelayanan;
            const status = losLevel ? LOS_TO_STATUS[losLevel] : "Lancar";
-           const isOffline = loc.hide_lokasi || isLocationOffline(traffic?.timestamp, loc.interval || 5);
            return {
              ...loc,
              status1: status,
              status2: status,
              smp: traffic?.total_kendaraan || 0,
              timestamp: traffic?.timestamp || loc.timestamp,
-             hide_lokasi: isOffline
+             hide_lokasi: loc.hide_lokasi || !traffic
            };
          })} cameras={cameras} />
         </div>
@@ -142,15 +128,10 @@ export default function UserPage() {
                 // Get SMP from total_kendaraan
                 const smp = traffic?.total_kendaraan || 0;
                 
-                // Check if offline based on last update time
-                const isOffline = loc.hide_lokasi || isLocationOffline(traffic?.timestamp, loc.interval || 5);
-                
                 console.log(`Location ${loc.id} (${loc.nama_lokasi}):`, {
                   hasTraffic: !!traffic,
                   timestamp: traffic?.timestamp,
-                  interval: loc.interval,
-                  hide_lokasi: loc.hide_lokasi,
-                  isOffline: isOffline
+                  hide_lokasi: loc.hide_lokasi
                 });
                 
                 // Format timestamp
@@ -171,7 +152,7 @@ export default function UserPage() {
                     location={loc.nama_lokasi}
                     lastUpdate={timestamp}
                     smp={smp} 
-                    status={isOffline ? "Offline" : "Online"} 
+                    status={loc.hide_lokasi || !traffic ? "Offline" : "Online"} 
                     direction1={{ name: dirName1, status: status }}
                     direction2={{ name: dirName2, status: status }}
                   />

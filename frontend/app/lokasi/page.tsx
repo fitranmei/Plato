@@ -240,7 +240,7 @@ export default function LokasiPage() {
                 tipe_hambatan: data.tipe_hambatan,
                 kelas_hambatan: data.kelas_hambatan,
                 ukuran_kota: String(data.ukuran_kota),
-                interval: String(data.interval),
+                interval: String(Math.round(data.interval / 60)), // Convert seconds to minutes
                 publik: String(data.publik),
                 hide_lokasi: String(data.hide_lokasi),
             });
@@ -278,7 +278,7 @@ export default function LokasiPage() {
             latitude: parseFloat(form.latitude),
             longitude: parseFloat(form.longitude),
             zona_waktu: parseFloat(form.zona_waktu) || 7, // Default UTC+7
-            interval: parseInt(form.interval),
+            interval: parseInt(form.interval) * 60, // Convert minutes to seconds
             publik: form.publik === 'true',
             hide_lokasi: form.hide_lokasi === 'true',
             keterangan: form.keterangan

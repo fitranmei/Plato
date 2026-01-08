@@ -9,7 +9,7 @@ import { ExportModal } from './components/ExportModal';
 import { ChartCard } from './components/Charts/ChartCard';
 import { TrafficPieChart } from './components/Charts/TrafficPieChart';
 import { TrafficBarChart } from './components/Charts/TrafficBarChart';
-import { formatTimestampWIB } from './utils/dateHelpers';
+import { formatTimestampWithZone } from './utils/dateHelpers';
 
 export default function MonitoringPage() {
     const params = useParams();
@@ -129,7 +129,7 @@ export default function MonitoringPage() {
                             <span className="text-xl font-semibold">Live Camera Feed (ID: {location.id})</span>
                         </div>
                         <p className="text-right text-gray-600 text-sm relative z-10">
-                            Update Terakhir: {formatTimestampWIB(latestTrafficData?.timestamp || null)}
+                            Update Terakhir: {formatTimestampWithZone(latestTrafficData?.timestamp || null, location.zona_waktu)}
                         </p>
                     </div>
                 </div>

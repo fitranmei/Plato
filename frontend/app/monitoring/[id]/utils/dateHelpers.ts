@@ -1,5 +1,31 @@
 /**
+ * Format timestamp with timezone from location data
+ * Note: Timestamp from MongoDB is already adjusted, display as-is
+ */
+export const formatTimestampWithZone = (timestamp: string | null, zonaWaktu: number = 7): string => {
+    if (!timestamp) return '-';
+    
+    // Parse timestamp directly without timezone conversion
+    const date = new Date(timestamp);
+    
+    // Extract date and time components manually to avoid timezone shift
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+    
+    const formattedDate = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    
+    // Format UTC offset
+    const utcOffset = zonaWaktu >= 0 ? `UTC+${zonaWaktu}` : `UTC${zonaWaktu}`;
+    return `${formattedDate} ${utcOffset}`;
+};
+
+/**
  * Format timestamp to Indonesian locale with WIB timezone
+ * @deprecated Use formatTimestampWithZone instead
  */
 export const formatTimestampWIB = (timestamp: string | null): string => {
     if (!timestamp) return '-';
@@ -18,9 +44,10 @@ export const formatTimestampWIB = (timestamp: string | null): string => {
 
 /**
  * Format date for chart labels (DD/MM/YYYY)
+ * Uses UTC to avoid timezone shift issues
  */
 export const formatDateKey = (date: Date): string => {
-    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+    return `${date.getUTCDate().toString().padStart(2, '0')}/${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCFullYear()}`;
 };
 
 /**
@@ -68,7 +95,7 @@ export const aggregateHourlyData = (trafficData: any[]) => {
     // Aggregate data
     trafficData.forEach((traffic: any) => {
         const date = new Date(traffic.timestamp);
-        const hour = date.getHours().toString().padStart(2, '0');
+        const hour = date.getUTCHours().toString().padStart(2, '0'); // Use UTC hours to avoid timezone shift
 
         if (traffic.zona_arah_data && Array.isArray(traffic.zona_arah_data)) {
             // Arah 1
