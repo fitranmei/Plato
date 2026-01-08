@@ -13,6 +13,7 @@ func SetupTrafficRawDataRoutes(router fiber.Router) {
 
 	rawData.Get("/", middleware.RestrictTo("admin", "superadmin"), controllers.GetAllRawData)
 	rawData.Get("/unprocessed", middleware.RestrictTo("admin", "superadmin"), controllers.GetUnprocessedRawData)
+	rawData.Get("/export-excel", middleware.RestrictTo("admin", "superadmin"), controllers.ExportRawDataToExcel)
 	rawData.Get("/:id", middleware.RestrictTo("admin", "superadmin"), controllers.GetRawDataByID)
 	rawData.Get("/lokasi/:lokasi_id", middleware.RestrictTo("admin", "superadmin"), controllers.GetRawDataByLokasiID)
 
