@@ -6,6 +6,7 @@ import { useMonitoringData } from './hooks/useMonitoringData';
 import { DetailCard } from './components/DetailCard';
 import { SimpleStats } from './components/SimpleStats';
 import { ExportModal } from './components/ExportModal';
+import { ValidationNotification } from './components/ValidationNotification';
 import { ChartCard } from './components/Charts/ChartCard';
 import { TrafficPieChart } from './components/Charts/TrafficPieChart';
 import { TrafficBarChart } from './components/Charts/TrafficBarChart';
@@ -27,10 +28,11 @@ export default function MonitoringPage() {
     const [showExportModal, setShowExportModal] = useState(false);
     const [exportStartDate, setExportStartDate] = useState("");
     const [exportEndDate, setExportEndDate] = useState("");
+    const [showValidationNotification, setShowValidationNotification] = useState(false);
 
     const handleExport = () => {
         if (!exportStartDate || !exportEndDate) {
-            alert("Harap pilih Tanggal Awal dan Tanggal Akhir terlebih dahulu.");
+            setShowValidationNotification(true);
             return;
         }
         
@@ -230,6 +232,13 @@ export default function MonitoringPage() {
                 endDate={exportEndDate}
                 onStartDateChange={setExportStartDate}
                 onEndDateChange={setExportEndDate}
+            />
+
+            {/* Validation Notification */}
+            <ValidationNotification
+                isVisible={showValidationNotification}
+                message="Silahkan isi Tanggal Awal dan Akhir terlebih dahulu"
+                onClose={() => setShowValidationNotification(false)}
             />
         </main>
     );
