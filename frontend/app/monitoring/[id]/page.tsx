@@ -163,7 +163,7 @@ export default function MonitoringPage() {
                         <div className="flex-1 relative">
                             <iframe
                                 className="absolute inset-0 w-full h-full"
-                                src="https://www.youtube.com/embed/GcT5wjKr0UE?autoplay=1&mute=1&controls=1&rel=0"
+                                src="https://www.youtube.com/embed/wDchsz8nmbo?autoplay=1&mute=1&controls=1&rel=0"
                                 title="Live Camera Feed"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                 allowFullScreen

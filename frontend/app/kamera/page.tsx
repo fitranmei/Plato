@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { X, Video, Pencil } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useModalContext } from "../components/ModalContext";
@@ -20,7 +20,7 @@ type Location = {
   keterangan: string;
 };
 
-export default function KameraPage() {
+function KameraPageContent() {
   const { setIsModalOpen, showNotification } = useModalContext();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -459,5 +459,13 @@ export default function KameraPage() {
         </>
       )}
     </main>
+  );
+}
+
+export default function KameraPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#24345A] flex items-center justify-center text-white">Loading...</div>}>
+      <KameraPageContent />
+    </Suspense>
   );
 }
