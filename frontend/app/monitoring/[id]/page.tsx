@@ -36,8 +36,40 @@ export default function MonitoringPage() {
             return;
         }
         
-        const exportUrl = `http://localhost:8080/api/export/summary?location_id=${params.id}&start_date=${exportStartDate}&end_date=${exportEndDate}`;
-        window.open(exportUrl, '_blank');
+        // Convert dates to ISO format with time
+        const startDateTime = new Date(exportStartDate);
+        startDateTime.setHours(0, 0, 0, 0);
+        const endDateTime = new Date(exportEndDate);
+        endDateTime.setHours(23, 59, 59, 999);
+        
+        const token = localStorage.getItem('token');
+        const exportUrl = `/api/traffic-raw-data/export-excel?lokasi_id=${params.id}&start_time=${startDateTime.toISOString()}&end_time=${endDateTime.toISOString()}`;
+        
+        // Fetch with authorization header then trigger download
+        fetch(exportUrl, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Export gagal');
+            return response.blob();
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `traffic_data_${params.id}_${exportStartDate}_${exportEndDate}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showNotification('Export berhasil!', 'success');
+        })
+        .catch(error => {
+            showNotification('Export gagal: ' + error.message, 'error');
+        });
+        
         setShowExportModal(false);
     };
 
