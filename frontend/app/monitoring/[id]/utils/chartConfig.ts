@@ -51,5 +51,8 @@ export const BAR_COLOR_MAP: Record<string, string> = {
  * Pie chart dimensions
  */
 export const PIE_SIZE = 400;
+export const PIE_SIZE_MOBILE = 280;
 export const CENTER = Math.floor(PIE_SIZE / 2);
+export const CENTER_MOBILE = Math.floor(PIE_SIZE_MOBILE / 2);
 export const OUTER_RADIUS = Math.floor(PIE_SIZE * 0.37);
+export const OUTER_RADIUS_MOBILE = Math.floor(PIE_SIZE_MOBILE * 0.37);

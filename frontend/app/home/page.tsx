@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import HomeCard from "../components/homeCard";
 import MapWrapper from '../components/MapWrapper';
 import { useRouter } from 'next/navigation';
+import { formatTimestampWithZone } from '../monitoring/[id]/utils/dateHelpers';
 
 // Map MKJI/PKJI Level of Service (A-F) to Indonesian status
 const LOS_TO_STATUS: Record<string, string> = {
@@ -92,8 +93,8 @@ export default function UserPage() {
 
   return (
     <main className="min-h-screen flex flex-col bg-gray-100 bg-[url('/images/bg-home.webp')] bg-center">
-      <section className="p-6 px-40 flex flex-col">
-        <div className="w-full h-[400px] bg-white rounded-xl mb-10 overflow-hidden shadow-md border border-gray-200">
+      <section className="p-4 sm:p-6 md:px-20 lg:px-40 flex flex-col">
+        <div className="w-full h-[250px] sm:h-[350px] lg:h-[400px] bg-white rounded-xl mb-6 sm:mb-10 overflow-hidden shadow-md border border-gray-200">
          <MapWrapper locations={locations.map(loc => {
            const traffic = trafficDataMap[loc.id];
            const losLevel = traffic?.mkji_analysis?.tingkat_pelayanan || traffic?.pkji_analysis?.tingkat_pelayanan;
@@ -134,16 +135,8 @@ export default function UserPage() {
                   hide_lokasi: loc.hide_lokasi
                 });
                 
-                // Format timestamp
-                const timestamp = traffic?.timestamp ? new Date(traffic.timestamp).toLocaleString('id-ID', {
-                  year: 'numeric',
-                  month: '2-digit', 
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                  hour12: false
-                }) + ' WIB' : '-';
+                // Format timestamp using the same format as monitoring page
+                const timestamp = traffic?.timestamp ? formatTimestampWithZone(traffic.timestamp, (loc as any).zona_waktu || 7) : '-';
 
                 return (
                   <HomeCard 

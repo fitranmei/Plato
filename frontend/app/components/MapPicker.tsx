@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { formatTimestampWithZone } from '../monitoring/[id]/utils/dateHelpers';
 
 const iconUrl = 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png';
 const shadowUrl = 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png';
@@ -111,12 +112,7 @@ export default function MapPicker({ locations = [], cameras = [], onMarkerClick 
                               <div className="text-right pr-6">
                                 <h3 className="text-sm font-bold m-0 leading-tight mt-2">{loc.nama_lokasi}</h3>
                                 <p className="text-[10px] opacity-90 m-0 mt-0.5">
-                                  Update: {loc.timestamp ? new Date(loc.timestamp).toLocaleString('id-ID', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    second: '2-digit',
-                                    hour12: false
-                                  }) + ' WIB' : '-'}
+                                  Terakhir diupdate: {loc.timestamp ? formatTimestampWithZone(loc.timestamp, (loc as any).zona_waktu || 7) : '-'}
                                 </p>
                               </div>
                            </div>

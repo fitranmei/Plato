@@ -21,6 +21,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
     pathname?.startsWith('/lokasi') || 
     pathname?.startsWith('/kamera') || 
     pathname?.startsWith('/klasifikasi') || 
+    pathname?.startsWith('/kendaraan') || 
     pathname?.startsWith('/manajemen-user');
 
   const [monitoringTitle, setMonitoringTitle] = useState("TFC - LOADING...");
@@ -112,7 +113,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-white border-b border-gray-200 px-6 flex items-center justify-between text-black shadow-sm h-16 transition-all">
+    <header className="sticky top-0 z-30 w-full bg-white border-b border-gray-200 px-4 sm:px-6 flex items-center justify-between text-black shadow-sm h-12 transition-all">
 
       {/* --- BAGIAN KIRI --- */}
       <div className="flex items-center gap-4">

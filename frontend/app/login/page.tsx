@@ -47,16 +47,16 @@ export default function LoginPage() {
     };
 
     return (
-        <main className="min-h-screen flex flex-col justify-center items-center bg-gray-100 p-8 bg-[url('/images/bg-login.webp')] bg-cover relative">
+        <main className="min-h-screen flex flex-col justify-center items-center bg-gray-100 p-4 sm:p-8 bg-[url('/images/bg-login.webp')] bg-cover relative">
             <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"></div>
             
-            <div className="flex flex-row items-center justify-center gap-20 w-full max-w-6xl z-10">
+            <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-20 w-full max-w-6xl z-10">
                 <div className="flex justify-center">
-                    <Image src="/images/logo.png" alt="Logo Dishub" width={380} height={380} className="object-contain drop-shadow-2xl" />
+                    <Image src="/images/logo.png" alt="Logo Dishub" width={380} height={380} className="object-contain drop-shadow-2xl w-40 h-40 sm:w-60 sm:h-60 lg:w-[380px] lg:h-[380px]" />
                 </div>
-                <form onSubmit={handleLogin} className="flex flex-col w-[480px] rounded-3xl bg-white p-10 shadow-2xl">
-                    <h1 className="font-bold text-[#24345A] text-3xl text-center mb-2">Selamat Datang!</h1>
-                    <span className="mb-8 text-gray-500 text-center text-sm">Silakan isi detail akun anda!</span>
+                <form onSubmit={handleLogin} className="flex flex-col w-full max-w-[480px] rounded-3xl bg-white p-6 sm:p-10 shadow-2xl">
+                    <h1 className="font-bold text-[#24345A] text-2xl sm:text-3xl text-center mb-2">Selamat Datang!</h1>
+                    <span className="mb-6 sm:mb-8 text-gray-500 text-center text-xs sm:text-sm">Silakan isi detail akun anda!</span>
                     
                     {error && (
                         <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">

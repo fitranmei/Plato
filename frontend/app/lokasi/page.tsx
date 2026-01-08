@@ -362,23 +362,23 @@ export default function LokasiPage() {
 
     return (
         <main className="min-h-screen bg-[#24345A] text-white font-sans">
-            <div className="p-8 max-w-6xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
+            <div className="p-4 sm:p-8 max-w-6xl mx-auto">
+                <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
                     <h1 className="text-2xl font-bold">DATA LOKASI</h1>
-                    <div className="flex items-center gap-4">
-                        <div className="relative">
+                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                        <div className="relative w-full sm:w-64">
                             <input 
                                 type="text"
                                 placeholder="Cari lokasi..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="px-4 py-2 rounded-lg bg-white text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 w-64"
+                                className="px-4 py-2 rounded-lg bg-white text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full"
                             />
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 absolute right-3 top-2.5 text-gray-500">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.5 5.5a7.5 7.5 0 0 0 10.5 10.5Z" />
                             </svg>
                         </div>
-                        <button onClick={openModal} className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg shadow">
+                        <button onClick={openModal} className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg shadow whitespace-nowrap">
                             + Tambah Data Lokasi
                         </button>
                     </div>
@@ -445,9 +445,9 @@ export default function LokasiPage() {
                 )}
 
                 {isModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <div className="absolute inset-0 bg-black/60" />
-                        <div className="bg-gray-200 w-[600px] rounded-xl p-5 text-black relative">
+                        <div className="bg-gray-200 w-full max-w-[600px] rounded-xl p-4 sm:p-5 text-black relative max-h-[90vh] overflow-y-auto">
                             <button 
                                 onClick={closeModal} 
                                 className="absolute top-3 right-3 bg-[#24345A] text-white w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#1e2b4a] transition-colors font-bold shadow-md text-lg" 

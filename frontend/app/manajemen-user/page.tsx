@@ -162,22 +162,22 @@ export default function ManajemenUserPage() {
 
   // ================= UI =================
   return (
-    <main className="min-h-screen bg-[#24345A] text-white font-sans p-8">
+    <main className="min-h-screen bg-[#24345A] text-white font-sans p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
 
         {/* ===== TITLE ===== */}
-        <h1 className="text-2xl font-bold mb-6">MANAJEMEN DATA USER</h1>
+        <h1 className="text-xl sm:text-2xl font-bold mb-6">MANAJEMEN DATA USER</h1>
 
         {/* ===== TOP ACTION ===== */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
           <button
             onClick={() => setShowModal(true)}
-            className="bg-orange-500 hover:bg-orange-600 px-5 py-2 rounded-lg font-semibold shadow"
+            className="w-full md:w-auto bg-orange-500 hover:bg-orange-600 px-5 py-2 rounded-lg font-semibold shadow text-sm sm:text-base"
           >
             + Tambah Data User
           </button>
 
-          <div className="relative w-60">
+          <div className="relative w-full md:w-60">
             <Search
               size={18}
               className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
@@ -186,7 +186,7 @@ export default function ManajemenUserPage() {
               placeholder="Cari user..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 py-2 rounded-xl bg-white text-gray-800 border border-white focus:outline-none"
+              className="w-full pl-11 py-2 rounded-xl bg-white text-gray-800 border border-white focus:outline-none text-sm"
             />
           </div>
         </div>
@@ -196,7 +196,8 @@ export default function ManajemenUserPage() {
           {loading ? (
              <div className="p-8 text-center text-gray-500">Loading data...</div>
           ) : (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[600px]">
                 <thead className="bg-gray-100">
                 <tr>
                     <th className="px-4 py-3 text-left">No</th>
@@ -228,15 +229,16 @@ export default function ManajemenUserPage() {
                 )}
                 </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>
 
       {/* ================= MODAL ================= */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60" onClick={() => setShowModal(false)} />
-            <div className="bg-gray-200 w-[720px] rounded-xl p-8 text-black relative">
+            <div className="bg-gray-200 w-full max-w-[720px] rounded-xl p-4 sm:p-8 text-black relative max-h-[90vh] overflow-y-auto">
 
               {/* CLOSE */}
               <button

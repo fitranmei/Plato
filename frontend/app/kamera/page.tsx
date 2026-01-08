@@ -232,15 +232,16 @@ function KameraPageContent() {
   // ================= UI =================
   return (
     <main className="min-h-screen bg-[#24345A] text-white font-sans">
-      <div className="p-8 max-w-6xl mx-auto">
+      <div className="p-4 sm:p-8 max-w-6xl mx-auto">
 
         {/* ===== TITLE & ACTION ===== */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">DATA KAMERA</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">DATA KAMERA</h1>
         </div>
 
         {/* ===== TABLE ===== */}
         <div className="bg-white rounded-lg overflow-hidden text-gray-800">
+          <div className="overflow-x-auto">
           <table className="min-w-full text-sm text-left">
             <thead className="bg-gray-100">
               <tr>
@@ -271,6 +272,7 @@ function KameraPageContent() {
               ))}
             </tbody>
           </table>
+          </div>
           {locations.length === 0 && (
             <div className="p-8 text-center text-gray-500">
                 Belum ada data lokasi
@@ -286,8 +288,8 @@ function KameraPageContent() {
                 className="fixed inset-0 bg-black/60 z-40"
                 onClick={() => setShowListModal(false)}
             />
-            <div className="fixed inset-0 z-50 flex items-center justify-center">
-                <div className="bg-white w-[900px] rounded-xl p-8 text-black relative max-h-[80vh] overflow-y-auto">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="bg-white w-full max-w-[900px] rounded-xl p-4 sm:p-8 text-black relative max-h-[80vh] overflow-y-auto">
                     <button
                         onClick={() => setShowListModal(false)}
                         className="absolute top-4 right-4 text-gray-500 hover:text-black"
@@ -375,8 +377,8 @@ function KameraPageContent() {
           />
 
           {/* MODAL */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="bg-gray-200 w-[760px] rounded-xl p-8 text-black relative">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-gray-200 w-full max-w-[720px] rounded-xl p-4 sm:p-8 text-black relative max-h-[90vh] overflow-y-auto">
 
               {/* CLOSE */}
               <button
@@ -387,12 +389,12 @@ function KameraPageContent() {
                 <X size={24} />
               </button>
 
-              <h2 className="text-xl font-bold mb-8">
+              <h2 className="text-lg sm:text-xl font-bold mb-6 sm:mb-8">
                 {editId ? "EDIT DATA KAMERA" : "TAMBAH DATA KAMERA"}
               </h2>
 
               {/* FORM */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label>Tipe Kamera</label>
                   <select

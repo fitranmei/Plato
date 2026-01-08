@@ -122,10 +122,10 @@ export default function MonitoringPage() {
 
     return (
         <main className="min-h-screen bg-[#1E293B] text-white font-sans pb-10">
-            <div className="p-6 max-w-7xl mx-auto flex flex-col gap-8 transform scale-90 origin-top">
+            <div className="p-4 sm:p-6 max-w-7xl mx-auto flex flex-col gap-6 sm:gap-8 transform scale-90 origin-top">
                 
                 {/* Section 1: Detail Cards + Camera Feed */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <div className="flex flex-col gap-6">
                         <DetailCard
                             direction={dir1}
@@ -182,23 +182,23 @@ export default function MonitoringPage() {
 
                 {/* Section 2: Simple Stats */}
                 <div className="text-center">
-                    <h2 className="text-xl font-bold mb-6 flex items-center justify-center gap-2">
+                    <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 flex items-center justify-center gap-2">
                         ARUS KENDARAAN
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                         <SimpleStats direction={dir1} count={countArah1} />
                         <SimpleStats direction={dir2} count={countArah2} />
                     </div>
                 </div>
 
                 {/* Section 3: Pie & Bar Charts */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mt-4">
                     <TrafficPieChart data={pieDataReal} dir1={dir1} dir2={dir2} />
                     <TrafficBarChart data={barChartData} dir1={dir1} dir2={dir2} />
                 </div>
 
                 {/* Section 4: Hourly Graphs */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-4">
                     {/* Volume Arah 1 */}
                     <ChartCard title={`Grafik Volume Kendaraan ${dir1}`}>
                         <ResponsiveContainer width="100%" height="100%">

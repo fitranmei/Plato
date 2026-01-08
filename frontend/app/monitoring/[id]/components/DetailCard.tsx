@@ -69,30 +69,30 @@ export const DetailCard: React.FC<DetailCardProps> = ({
     return (
         <div className="bg-white rounded-xl overflow-hidden text-gray-800 shadow-lg">
             <div 
-                className={`p-3 flex justify-between items-center font-bold ${style.textColor}`} 
+                className={`p-2 sm:p-3 flex justify-between items-center font-bold text-sm sm:text-base ${style.textColor}`} 
                 style={{ backgroundColor: style.color }}
             >
                 <div className='flex items-center'>
-                    <div className="p-2 rounded-lg text-black bg-white/20 backdrop-blur-sm">
+                    <div className="p-1.5 sm:p-2 rounded-lg text-black bg-white/20 backdrop-blur-sm">
                         <svg 
                             xmlns="http://www.w3.org/2000/svg" 
                             fill="none" 
                             viewBox="0 0 24 24" 
                             strokeWidth={4} 
                             stroke="currentColor" 
-                            className="w-6 h-6"
+                            className="w-5 h-5 sm:w-6 sm:h-6"
                         >
                             <path strokeLinecap="round" strokeLinejoin="round" d={arrowPath} />
                         </svg>
                     </div>
-                    <span className="ml-2">{direction}</span>
+                    <span className="ml-2 text-sm sm:text-base">{direction}</span>
                 </div>
                 <div className="flex items-center flex-row gap-2">
-                    <span className='text-end'>{status.toUpperCase()}</span>
+                    <span className='text-end text-sm sm:text-base'>{status.toUpperCase()}</span>
                 </div>
             </div>
-            <div className="p-4">
-                <div className={`mb-2 border-b pt-2 pb-2 ${is12Classes ? 'grid grid-cols-6 gap-y-6 gap-x-2' : 'flex justify-between px-4 md:px-10'}`}>
+            <div className="p-3 sm:p-4">
+                <div className={`mb-2 border-b pt-2 pb-2 ${is12Classes ? 'grid grid-cols-6 gap-y-3 gap-x-1 sm:gap-y-6 sm:gap-x-2' : 'flex justify-between px-4 md:px-10'}`}>
                     {vehicleList.map((v, i) => (
                         <VehicleIcon 
                             key={i} 
