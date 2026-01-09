@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useModalContext } from '../components/ModalContext';
 
 interface Location {
@@ -420,12 +421,20 @@ export default function LokasiPage() {
                                                 <td className="px-4 py-3">{r.longitude}</td>
                                                 <td className="px-4 py-3">{r.keterangan || '-'}</td>
                                                 <td className="px-4 py-3">
-                                                    <div className="flex gap-2">
-                                                        <button onClick={() => handleDelete(r.id)} className="text-sm text-red-600 hover:underline font-semibold">
-                                                            Delete
+                                                    <div className="flex justify-center gap-2">
+                                                        <button 
+                                                            onClick={() => handleEdit(r.id)} 
+                                                            className="p-1.5 border rounded hover:bg-gray-50 text-blue-600"
+                                                            title="Edit Lokasi"
+                                                        >
+                                                            <Pencil size={16} />
                                                         </button>
-                                                        <button onClick={() => handleEdit(r.id)} className="text-sm text-orange-600 hover:underline">
-                                                            Edit
+                                                        <button 
+                                                            onClick={() => handleDelete(r.id)} 
+                                                            className="p-1.5 border rounded hover:bg-red-50 text-red-600"
+                                                            title="Hapus Lokasi"
+                                                        >
+                                                            <Trash2 size={16} />
                                                         </button>
                                                     </div>
                                                 </td>

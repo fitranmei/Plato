@@ -208,17 +208,17 @@ export default function KendaraanPage() {
 						return (
 							<div
 								key={item.id}
-								className="flex flex-col sm:flex-row sm:items-center justify-between px-4 py-3 sm:px-6 sm:py-4 gap-2 sm:gap-0"
+								className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 py-3 sm:px-6 sm:py-4 gap-2 sm:gap-4"
 							>
-								<span className="font-medium text-sm sm:text-base">{item.kelas}</span>
+								<span className="font-medium text-sm sm:text-base sm:flex-1">{item.kelas}</span>
 
-								<div className="flex items-center justify-between sm:contents">
-									<div className="bg-gray-100 px-3 py-1 rounded-full text-xs sm:text-sm text-left w-fit">
+								<div className="flex items-center justify-between sm:justify-center sm:flex-1">
+									<div className="bg-gray-100 px-3 py-1 rounded-full text-xs sm:text-sm text-center">
 										{item.jenis}
 									</div>
-
-									<span className="text-sm sm:text-base text-gray-600 sm:text-gray-800">{item.panjang}</span>
 								</div>
+
+								<span className="text-sm sm:text-base text-gray-600 sm:text-gray-800 sm:flex-1 sm:text-right">{item.panjang}</span>
 							</div>
 						);
 					})}

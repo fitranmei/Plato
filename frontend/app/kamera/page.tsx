@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
-import { X, Video, Pencil } from "lucide-react";
+import { X, Video, Pencil, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useModalContext } from "../components/ModalContext";
 
@@ -125,6 +125,36 @@ function KameraPageContent() {
       
       setShowListModal(false);
       setShowModal(true);
+  };
+
+  const handleDelete = async (cameraId: string) => {
+      if (!confirm('Yakin ingin menghapus kamera ini?')) {
+          return;
+      }
+
+      try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`/api/cameras/${cameraId}`, {
+              method: 'DELETE',
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              }
+          });
+
+          if (!res.ok) {
+              const errData = await res.json();
+              throw new Error(errData.error || 'Gagal menghapus kamera');
+          }
+
+          showNotification && showNotification('Kamera berhasil dihapus');
+          
+          // Refresh camera list
+          if (selectedLocation) {
+              fetchCamerasByLocation(selectedLocation.id);
+          }
+      } catch (error: any) {
+          showNotification && showNotification(error.message, 'error');
+      }
   };
 
   useEffect(() => {
@@ -323,13 +353,22 @@ function KameraPageContent() {
                                 <td className="px-4 py-3">{k.zona_arah?.[1]?.arah || '-'}</td>
                                 <td className="px-4 py-3">{k.zona_arah?.[1]?.id_zona_arah || '-'}</td>
                                 <td className="px-4 py-3 text-center">
-                                    <button 
-                                        onClick={() => openEditModal(k)}
-                                        className="p-1.5 border rounded hover:bg-gray-50 text-blue-600"
-                                        title="Edit Kamera"
-                                    >
-                                        <Pencil size={16} />
-                                    </button>
+                                    <div className="flex justify-center gap-2">
+                                        <button 
+                                            onClick={() => openEditModal(k)}
+                                            className="p-1.5 border rounded hover:bg-gray-50 text-blue-600"
+                                            title="Edit Kamera"
+                                        >
+                                            <Pencil size={16} />
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDelete(k.id)}
+                                            className="p-1.5 border rounded hover:bg-red-50 text-red-600"
+                                            title="Hapus Kamera"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
                                 </td>
                                 </tr>
                             ))
