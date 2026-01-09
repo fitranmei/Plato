@@ -75,7 +75,7 @@ export default function MapPicker({ locations = [], cameras = [], onMarkerClick 
     <div className="w-full h-full rounded-xl overflow-hidden border border-gray-300 relative z-0">
       <MapContainer 
         center={locations.length > 0 ? [locations[0].latitude, locations[0].longitude] : position}
-        zoom={13}
+        zoom={4}
         style={{ height: '100%', width: '100%' }}
       >
         <TileLayer
@@ -105,9 +105,9 @@ export default function MapPicker({ locations = [], cameras = [], onMarkerClick 
                     <Popup minWidth={300} maxWidth={100} className="custom-popup">
                         <div className="font-sans bg-white rounded-lg overflow-hidden w-full">
                            {/* Header */}
-                           <div className={`${!loc.hide_lokasi ? 'bg-[#00AA13]' : 'bg-red-500'} px-2 py-1.5 flex justify-between items-start text-white`}>
+                           <div className={`${loc.publik !== false ? 'bg-[#00AA13]' : 'bg-red-500'} px-2 py-1.5 flex justify-between items-start text-white`}>
                               <div className="font-bold text-sm mt-2">
-                                {!loc.hide_lokasi ? "Online" : "Offline"}
+                                {loc.publik !== false ? "Online" : "Offline"}
                               </div>
                               <div className="text-right pr-6">
                                 <h3 className="text-sm font-bold m-0 leading-tight mt-2">{loc.nama_lokasi}</h3>

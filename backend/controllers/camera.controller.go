@@ -249,10 +249,12 @@ func DeleteCamera(c *fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{"error": "kamera tidak ditemukan"})
 	}
 
+	// Delete associated zona_arah records
 	for _, za := range existingCamera.ZonaArah {
-		database.DB.Collection("zona_arah").DeleteOne(context.Background(), bson.M{"id_zona_arah_camera": za.IDZonaArah})
+		database.DB.Collection("zona_arah").DeleteOne(context.Background(), bson.M{"_id": za.IDZonaArah})
 	}
 
+	// Delete the camera
 	_, err = database.DB.Collection("cameras").DeleteOne(context.Background(), bson.M{"_id": id})
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "gagal menghapus kamera"})

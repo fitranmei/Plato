@@ -89,13 +89,14 @@ export default function UserPage() {
     fetchData();
   }, [router]);
 
-  const displayedLocations = locations;
+  // Filter out locations with hide_lokasi = true
+  const displayedLocations = locations.filter(loc => !loc.hide_lokasi);
 
   return (
     <main className="min-h-screen flex flex-col bg-gray-100 bg-[url('/images/bg-home.webp')] bg-center">
       <section className="p-4 sm:p-6 md:px-20 lg:px-40 flex flex-col">
         <div className="w-full h-[250px] sm:h-[350px] lg:h-[400px] bg-white rounded-xl mb-6 sm:mb-10 overflow-hidden shadow-md border border-gray-200">
-         <MapWrapper locations={locations.map(loc => {
+         <MapWrapper locations={locations.filter(loc => !loc.hide_lokasi).map(loc => {
            const traffic = trafficDataMap[loc.id];
            const losLevel = traffic?.mkji_analysis?.tingkat_pelayanan || traffic?.pkji_analysis?.tingkat_pelayanan;
            const status = losLevel ? LOS_TO_STATUS[losLevel] : "Lancar";
@@ -105,7 +106,7 @@ export default function UserPage() {
              status2: status,
              smp: traffic?.total_kendaraan || 0,
              timestamp: traffic?.timestamp || loc.timestamp,
-             hide_lokasi: loc.hide_lokasi || !traffic
+             hide_lokasi: false
            };
          })} cameras={cameras} />
         </div>
@@ -145,7 +146,7 @@ export default function UserPage() {
                     location={loc.nama_lokasi}
                     lastUpdate={timestamp}
                     smp={smp} 
-                    status={loc.hide_lokasi || !traffic ? "Offline" : "Online"} 
+                    status={loc.publik === false ? "Offline" : "Online"} 
                     direction1={{ name: dirName1, status: status }}
                     direction2={{ name: dirName2, status: status }}
                   />

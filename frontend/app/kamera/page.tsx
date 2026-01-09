@@ -11,6 +11,7 @@ type Kamera = {
   zona_arah: { id_zona_arah: string; arah: string }[];
   lokasi_penempatan: string;
   lokasi_id: string;
+  api_key?: string;
 };
 
 type Location = {
@@ -42,6 +43,8 @@ function KameraPageContent() {
   const [showListModal, setShowListModal] = useState(false); // List Camera Modal
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
+  const [visibleApiKeys, setVisibleApiKeys] = useState<Record<string, boolean>>({});
+  const [confirmation, setConfirmation] = useState<{ message: string, onConfirm: () => void } | null>(null);
 
   const [form, setForm] = useState({
     tipe: "",
@@ -128,33 +131,35 @@ function KameraPageContent() {
   };
 
   const handleDelete = async (cameraId: string) => {
-      if (!confirm('Yakin ingin menghapus kamera ini?')) {
-          return;
-      }
+      setConfirmation({
+          message: 'Yakin ingin menghapus kamera ini?',
+          onConfirm: async () => {
+              setConfirmation(null);
+              try {
+                  const token = localStorage.getItem('token');
+                  const res = await fetch(`/api/cameras/${cameraId}`, {
+                      method: 'DELETE',
+                      headers: {
+                          'Authorization': `Bearer ${token}`
+                      }
+                  });
 
-      try {
-          const token = localStorage.getItem('token');
-          const res = await fetch(`/api/cameras/${cameraId}`, {
-              method: 'DELETE',
-              headers: {
-                  'Authorization': `Bearer ${token}`
+                  if (!res.ok) {
+                      const errData = await res.json();
+                      throw new Error(errData.error || 'Gagal menghapus kamera');
+                  }
+
+                  showNotification && showNotification('Kamera berhasil dihapus');
+                  
+                  // Refresh camera list
+                  if (selectedLocation) {
+                      fetchCamerasByLocation(selectedLocation.id);
+                  }
+              } catch (error: any) {
+                  showNotification && showNotification(error.message, 'error');
               }
-          });
-
-          if (!res.ok) {
-              const errData = await res.json();
-              throw new Error(errData.error || 'Gagal menghapus kamera');
           }
-
-          showNotification && showNotification('Kamera berhasil dihapus');
-          
-          // Refresh camera list
-          if (selectedLocation) {
-              fetchCamerasByLocation(selectedLocation.id);
-          }
-      } catch (error: any) {
-          showNotification && showNotification(error.message, 'error');
-      }
+      });
   };
 
   useEffect(() => {
@@ -224,8 +229,18 @@ function KameraPageContent() {
 
         if (!res.ok) {
             const errData = await res.json();
-            throw new Error(errData.error || (editId ? 'Gagal mengupdate kamera' : 'Gagal menyimpan kamera'));
+            // Extract meaningful error message
+            let errorMsg = errData.error || (editId ? 'Gagal mengupdate kamera' : 'Gagal menyimpan kamera');
+            
+            // Check for duplicate key error
+            if (errorMsg.includes('dup key') || errorMsg.includes('duplicate')) {
+                errorMsg = 'Zona arah sudah ada di database. Silakan hubungi admin untuk membersihkan data atau gunakan nama arah yang berbeda.';
+            }
+            
+            throw new Error(errorMsg);
         }
+
+        const result = await res.json();
 
         setShowModal(false);
         showNotification && showNotification(editId ? 'Kamera berhasil diupdate' : 'Kamera berhasil disimpan');
@@ -339,6 +354,7 @@ function KameraPageContent() {
                             <th className="px-4 py-3 border-b">ID Zona 1</th>
                             <th className="px-4 py-3 border-b">Arah 2</th>
                             <th className="px-4 py-3 border-b">ID Zona 2</th>
+                            <th className="px-4 py-3 border-b">API Key</th>
                             <th className="px-4 py-3 border-b text-center">Aksi</th>
                         </tr>
                         </thead>
@@ -352,6 +368,18 @@ function KameraPageContent() {
                                 <td className="px-4 py-3">{k.zona_arah?.[0]?.id_zona_arah || '-'}</td>
                                 <td className="px-4 py-3">{k.zona_arah?.[1]?.arah || '-'}</td>
                                 <td className="px-4 py-3">{k.zona_arah?.[1]?.id_zona_arah || '-'}</td>
+                                <td className="px-4 py-3">
+                                    <button
+                                        onClick={() => setVisibleApiKeys(prev => ({ ...prev, [k.id]: !prev[k.id] }))}
+                                        className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded border"
+                                    >
+                                        {visibleApiKeys[k.id] ? (
+                                            <span className="font-mono text-[10px]">{k.api_key || '-'}</span>
+                                        ) : (
+                                            <span>••••••••</span>
+                                        )}
+                                    </button>
+                                </td>
                                 <td className="px-4 py-3 text-center">
                                     <div className="flex justify-center gap-2">
                                         <button 
@@ -374,7 +402,7 @@ function KameraPageContent() {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                                     Tidak ada data kamera di lokasi ini
                                 </td>
                             </tr>
@@ -499,6 +527,36 @@ function KameraPageContent() {
           </div>
         </>
       )}
+
+      {/* ================= CONFIRMATION MODAL ================= */}
+      {confirmation && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setConfirmation(null)} />
+          <div className="bg-white w-[400px] rounded-xl p-6 text-center relative shadow-2xl transform transition-all scale-100">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-4 bg-yellow-100">
+              <svg className="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Konfirmasi</h3>
+            <p className="text-gray-600 mb-6">{confirmation.message}</p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setConfirmation(null)}
+                className="flex-1 py-3 rounded-lg font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 transition-colors"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={confirmation.onConfirm}
+                className="flex-1 py-3 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+              >
+                Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -510,3 +568,5 @@ export default function KameraPage() {
     </Suspense>
   );
 }
+
+
