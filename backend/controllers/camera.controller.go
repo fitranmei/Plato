@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"backend/database"
@@ -76,12 +77,18 @@ func CreateCamera(c *fiber.Ctx) error {
 		}
 	}
 
+	// Generate API key if not provided or empty
+	apiKey := req.APIKey
+	if apiKey == "" {
+		apiKey = uuid.New().String()
+	}
+
 	camera := models.Camera{
 		ID:               id,
 		TipeKamera:       req.TipeKamera,
 		ZonaArah:         req.ZonaArah,
 		LokasiPenempatan: req.LokasiPenempatan,
-		APIKey:           req.APIKey,
+		APIKey:           apiKey,
 		Keterangan:       req.Keterangan,
 		LokasiID:         req.LokasiID,
 	}

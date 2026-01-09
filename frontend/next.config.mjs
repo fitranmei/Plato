@@ -1,6 +1,4 @@
 const nextConfig = {
-  // Rewrites hanya untuk local development
-  // Di Docker/production, Nginx akan handle routing ke backend
   ...(process.env.NODE_ENV === 'development' && {
     async rewrites() {
       return [
