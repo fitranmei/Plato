@@ -41,7 +41,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
         const fetchLocationName = async () => {
           try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`http://localhost:8080/locations/${id}`, {
+            const res = await fetch(`/api/locations/${id}`, {
               headers: {
                 "Authorization": `Bearer ${token}`
               }
