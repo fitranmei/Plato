@@ -110,48 +110,78 @@ func ConvertCameraDataToTrafficData(cameraData *CameraXMLData, camera *Camera) (
 		klasifikasiMap[k.Kelas] = k
 	}
 
+	// Build a map of configured zona_arah from camera
+	configuredZonaMap := make(map[int]CameraZonaArah)
+	for i, za := range camera.ZonaArah {
+		configuredZonaMap[i+1] = za // ZoneId is 1-based
+	}
+
+	// Build a map of incoming zones from camera data
+	incomingZonesMap := make(map[int]CameraZone)
+	for _, zone := range cameraData.Message.Body.Zones {
+		incomingZonesMap[zone.ZoneId] = zone
+	}
+
+	// Check for extra zones (zones in incoming data but not in camera config)
+	var extraZones []int
+	for zoneId := range incomingZonesMap {
+		if _, exists := configuredZonaMap[zoneId]; !exists {
+			extraZones = append(extraZones, zoneId)
+		}
+	}
+	if len(extraZones) > 0 {
+		log.Printf("WARNING [TrafficData - Camera %s]: Data diterima dengan zona berlebih yang tidak terdaftar di kamera: %v. Data zona tersebut tidak akan diproses.", camera.ID, extraZones)
+	}
+
+	// Check for missing zones (zones in camera config but not in incoming data)
+	var missingZones []int
+	for zoneId := range configuredZonaMap {
+		if _, exists := incomingZonesMap[zoneId]; !exists {
+			missingZones = append(missingZones, zoneId)
+		}
+	}
+	if len(missingZones) > 0 {
+		log.Printf("WARNING [TrafficData - Camera %s]: Data diterima tanpa zona yang terdaftar di kamera: %v. Zona tersebut akan diset ke 0.", camera.ID, missingZones)
+	}
+
 	var zonaArahData []TrafficZonaArahData
 
-	for _, zone := range cameraData.Message.Body.Zones {
-		var zonaArahID string
-		var namaArah string
-
-		if zone.ZoneId > 0 && zone.ZoneId <= len(camera.ZonaArah) {
-			zonaArahConfig := camera.ZonaArah[zone.ZoneId-1]
-			zonaArahID = zonaArahConfig.IDZonaArah
-			namaArah = zonaArahConfig.Arah
-		} else {
-			zonaArahID = fmt.Sprintf("ZA-%s-%d", camera.ID, zone.ZoneId)
-			namaArah = fmt.Sprintf("Arah %d", zone.ZoneId)
-		}
-
+	// Process only zones that are configured in the camera
+	for zoneId, zonaArahConfig := range configuredZonaMap {
 		var kelasData []TrafficKelasDetail
 		totalKendaraan := 0
 
-		for _, class := range zone.Classes {
-			var idKlasifikasi, namaKelas string
-			if k, exists := klasifikasiMap[class.ClassNr]; exists {
-				idKlasifikasi = k.ID
-				namaKelas = k.NamaKelas
-			} else {
-				idKlasifikasi = fmt.Sprintf("KK-%s-%d", location.Tipe_lokasi, class.ClassNr)
-				namaKelas = fmt.Sprintf("Kelas %d", class.ClassNr)
-			}
+		// Check if we have data for this zone
+		if zone, exists := incomingZonesMap[zoneId]; exists {
+			for _, class := range zone.Classes {
+				var idKlasifikasi, namaKelas string
+				if k, exists := klasifikasiMap[class.ClassNr]; exists {
+					idKlasifikasi = k.ID
+					namaKelas = k.NamaKelas
+				} else {
+					idKlasifikasi = fmt.Sprintf("KK-%s-%d", location.Tipe_lokasi, class.ClassNr)
+					namaKelas = fmt.Sprintf("Kelas %d", class.ClassNr)
+				}
 
-			kelasDetail := TrafficKelasDetail{
-				IDKlasifikasi:     idKlasifikasi,
-				NamaKelas:         namaKelas,
-				Kelas:             class.ClassNr,
-				JumlahKendaraan:   class.NumVeh,
-				KecepatanRataRata: class.Speed,
+				kelasDetail := TrafficKelasDetail{
+					IDKlasifikasi:     idKlasifikasi,
+					NamaKelas:         namaKelas,
+					Kelas:             class.ClassNr,
+					JumlahKendaraan:   class.NumVeh,
+					KecepatanRataRata: class.Speed,
+				}
+				kelasData = append(kelasData, kelasDetail)
+				totalKendaraan += class.NumVeh
 			}
-			kelasData = append(kelasData, kelasDetail)
-			totalKendaraan += class.NumVeh
+		} else {
+			// Zone is missing from incoming data, initialize with empty kelas data
+			kelasData = []TrafficKelasDetail{}
+			totalKendaraan = 0
 		}
 
 		zonaArah := TrafficZonaArahData{
-			IDZonaArah:     zonaArahID,
-			NamaArah:       namaArah,
+			IDZonaArah:     zonaArahConfig.IDZonaArah,
+			NamaArah:       zonaArahConfig.Arah,
 			KelasData:      kelasData,
 			TotalKendaraan: totalKendaraan,
 		}
@@ -351,43 +381,85 @@ func SaveRawDataFromCamera(cameraData *CameraXMLData, camera *Camera) (*TrafficR
 		intervalMenit = 5
 	}
 
+	// Build a map of configured zona_arah from camera
+	configuredZonaMap := make(map[int]CameraZonaArah)
+	for i, za := range camera.ZonaArah {
+		configuredZonaMap[i+1] = za // ZoneId is 1-based
+	}
+
+	// Build a map of incoming zones from camera data
+	incomingZonesMap := make(map[int]CameraZone)
+	for _, zone := range cameraData.Message.Body.Zones {
+		incomingZonesMap[zone.ZoneId] = zone
+	}
+
+	// Check for extra zones (zones in incoming data but not in camera config)
+	var extraZones []int
+	for zoneId := range incomingZonesMap {
+		if _, exists := configuredZonaMap[zoneId]; !exists {
+			extraZones = append(extraZones, zoneId)
+		}
+	}
+	if len(extraZones) > 0 {
+		log.Printf("WARNING [Camera %s]: Data diterima dengan zona berlebih yang tidak terdaftar di kamera: %v. Data zona tersebut tidak akan diproses.", camera.ID, extraZones)
+	}
+
+	// Check for missing zones (zones in camera config but not in incoming data)
+	var missingZones []int
+	for zoneId := range configuredZonaMap {
+		if _, exists := incomingZonesMap[zoneId]; !exists {
+			missingZones = append(missingZones, zoneId)
+		}
+	}
+	if len(missingZones) > 0 {
+		log.Printf("WARNING [Camera %s]: Data diterima tanpa zona yang terdaftar di kamera: %v. Zona tersebut akan diset ke 0.", camera.ID, missingZones)
+	}
+
 	var zonaData []RawZonaData
 	totalKendaraan := 0
 
-	for _, zone := range cameraData.Message.Body.Zones {
+	// Process only zones that are configured in the camera
+	for zoneId, zonaArahConfig := range configuredZonaMap {
 		var kelasData []RawKelasData
 		zonaTotalKendaraan := 0
+		var occupancy, confidence, length, headway, density float64
 
-		for _, class := range zone.Classes {
-			kelasData = append(kelasData, RawKelasData{
-				Kelas:           class.ClassNr,
-				JumlahKendaraan: class.NumVeh,
-				Kecepatan:       class.Speed,
-				GapTime:         class.GapTime,
-			})
-			zonaTotalKendaraan += class.NumVeh
-		}
-
-		var idZonaArah string
-		var namaArah string
-		if zone.ZoneId > 0 && zone.ZoneId <= len(camera.ZonaArah) {
-			zonaArahConfig := camera.ZonaArah[zone.ZoneId-1]
-			idZonaArah = zonaArahConfig.IDZonaArah
-			namaArah = zonaArahConfig.Arah
+		// Check if we have data for this zone
+		if zone, exists := incomingZonesMap[zoneId]; exists {
+			for _, class := range zone.Classes {
+				kelasData = append(kelasData, RawKelasData{
+					Kelas:           class.ClassNr,
+					JumlahKendaraan: class.NumVeh,
+					Kecepatan:       class.Speed,
+					GapTime:         class.GapTime,
+				})
+				zonaTotalKendaraan += class.NumVeh
+			}
+			occupancy = zone.Occupancy
+			confidence = zone.Confidence
+			length = zone.Length
+			headway = zone.HeadWay
+			density = zone.Density
 		} else {
-			idZonaArah = fmt.Sprintf("ZA-%s-%d", camera.ID, zone.ZoneId)
-			namaArah = fmt.Sprintf("Arah %d", zone.ZoneId)
+			// Zone is missing from incoming data, initialize with zeros
+			kelasData = []RawKelasData{}
+			zonaTotalKendaraan = 0
+			occupancy = 0
+			confidence = 0
+			length = 0
+			headway = 0
+			density = 0
 		}
 
 		zonaData = append(zonaData, RawZonaData{
-			IDZonaArah:     idZonaArah,
-			ZonaID:         zone.ZoneId,
-			NamaArah:       namaArah,
-			Occupancy:      zone.Occupancy,
-			Confidence:     zone.Confidence,
-			Length:         zone.Length,
-			HeadWay:        zone.HeadWay,
-			Density:        zone.Density,
+			IDZonaArah:     zonaArahConfig.IDZonaArah,
+			ZonaID:         zoneId,
+			NamaArah:       zonaArahConfig.Arah,
+			Occupancy:      occupancy,
+			Confidence:     confidence,
+			Length:         length,
+			HeadWay:        headway,
+			Density:        density,
 			KelasData:      kelasData,
 			TotalKendaraan: zonaTotalKendaraan,
 		})

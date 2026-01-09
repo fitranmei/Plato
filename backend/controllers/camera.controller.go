@@ -77,9 +77,18 @@ func CreateCamera(c *fiber.Ctx) error {
 		}
 	}
 
-	// Generate API key if not provided or empty
 	apiKey := req.APIKey
 	if apiKey == "" {
+		apiKey = uuid.New().String()
+	}
+
+	// Pastikan API key unik
+	for {
+		var existingCamera models.Camera
+		err := database.DB.Collection("cameras").FindOne(context.Background(), bson.M{"api_key": apiKey}).Decode(&existingCamera)
+		if err != nil {
+			break
+		}
 		apiKey = uuid.New().String()
 	}
 
