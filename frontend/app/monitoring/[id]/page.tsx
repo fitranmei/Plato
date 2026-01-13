@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { Video } from 'lucide-react';
 import { useModalContext } from '../../components/ModalContext';
@@ -13,55 +13,12 @@ import { TrafficPieChart } from './components/Charts/TrafficPieChart';
 import { TrafficBarChart } from './components/Charts/TrafficBarChart';
 import { formatTimestampWithZone } from './utils/dateHelpers';
 import dynamic from 'next/dynamic';
-import { useEffect, useRef } from 'react';
-import Hls from 'hls.js';
 
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
-
-// Component untuk HLS Video Player
-function HLSPlayer({ src }: { src: string }) {
-    const videoRef = useRef<HTMLVideoElement>(null);
-
-    useEffect(() => {
-        const video = videoRef.current;
-        if (!video) return;
-
-        if (Hls.isSupported()) {
-            const hls = new Hls({
-                enableWorker: true,
-                lowLatencyMode: true,
-            });
-            hls.loadSource(src);
-            hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                video.play().catch(e => console.log("Autoplay blocked:", e));
-            });
-            hls.on(Hls.Events.ERROR, (event, data) => {
-                console.log("HLS Error:", data);
-            });
-
-            return () => {
-                hls.destroy();
-            };
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            // Safari native HLS
-            video.src = src;
-            video.addEventListener('loadedmetadata', () => {
-                video.play().catch(e => console.log("Autoplay blocked:", e));
-            });
-        }
-    }, [src]);
-
-    return (
-        <video
-            ref={videoRef}
-            controls
-            muted
-            playsInline
-            className="w-full h-full object-contain"
-        />
-    );
-}
+const HLSPlayer = dynamic(() => import('./components/HLSPlayer'), { 
+    ssr: false,
+    loading: () => <div className="text-white flex items-center justify-center h-full">Loading Player...</div>
+});
 
 export default function MonitoringPage() {
     const params = useParams();
@@ -175,7 +132,7 @@ export default function MonitoringPage() {
         setShowExportModal(false);
     };
 
-    // Helper to calculate average speed
+    // Helper to calculate average speed (Memoized not needed as it's a function, but result usage is)
     const calculateAvgSpeed = (zona: any) => {
         if (!zona || !zona.kelas_data || zona.total_kendaraan === 0) return 0;
         const totalSpeedVolume = zona.kelas_data.reduce((acc: number, curr: any) => {
@@ -183,6 +140,41 @@ export default function MonitoringPage() {
         }, 0);
         return Math.round(totalSpeedVolume / zona.total_kendaraan);
     };
+
+    // Memoize heavy calculations
+    const { dir1, dir2, countArah1, countArah2, speed1, speed2, pieDataReal, dataArah1, dataArah2 } = useMemo(() => {
+        const d1 = cameraData?.zona_arah?.[0]?.arah || "Arah 1";
+        const d2 = cameraData?.zona_arah?.[1]?.arah || "Arah 2";
+
+        const dA1 = latestTrafficData?.zona_arah_data?.[0];
+        const dA2 = latestTrafficData?.zona_arah_data?.[1];
+
+        const interval = latestTrafficData?.interval_menit || 5;
+        const multiplier = 60 / interval;
+
+        const c1 = Math.round((dA1?.total_kendaraan || 0) * multiplier);
+        const c2 = Math.round((dA2?.total_kendaraan || 0) * multiplier);
+
+        const s1 = calculateAvgSpeed(dA1) || 0;
+        const s2 = calculateAvgSpeed(dA2) || 0;
+
+        const pieData = [
+            { name: `Arah ke ${d2}`, value: c2 },
+            { name: `Arah ke ${d1}`, value: c1 }
+        ];
+
+        return {
+            dir1: d1,
+            dir2: d2,
+            countArah1: c1,
+            countArah2: c2,
+            speed1: s1,
+            speed2: s2,
+            pieDataReal: pieData,
+            dataArah1: dA1,
+            dataArah2: dA2
+        };
+    }, [cameraData, latestTrafficData]);
 
     if (loading) {
         return (
@@ -201,29 +193,6 @@ export default function MonitoringPage() {
             </div>
         );
     }
-
-    // Extract direction names
-    const dir1 = cameraData?.zona_arah?.[0]?.arah || "Arah 1";
-    const dir2 = cameraData?.zona_arah?.[1]?.arah || "Arah 2";
-
-    // Extract zona_arah data
-    const dataArah1 = latestTrafficData?.zona_arah_data?.[0];
-    const dataArah2 = latestTrafficData?.zona_arah_data?.[1];
-
-    const interval = latestTrafficData?.interval_menit || 5;
-    const multiplier = 60 / interval;
-
-    const countArah1 = Math.round((dataArah1?.total_kendaraan || 0) * multiplier);
-    const countArah2 = Math.round((dataArah2?.total_kendaraan || 0) * multiplier);
-
-    const speed1 = calculateAvgSpeed(dataArah1) || 0;
-    const speed2 = calculateAvgSpeed(dataArah2) || 0;
-
-    // Pie chart data
-    const pieDataReal = [
-        { name: `Arah ke ${dir2}`, value: countArah2 },
-        { name: `Arah ke ${dir1}`, value: countArah1 }
-    ];
 
     return (
         <main className="min-h-screen bg-[#1E293B] text-white font-sans pb-10">
@@ -278,7 +247,12 @@ export default function MonitoringPage() {
                                     allowFullScreen
                                 />
                             ) : videoSource?.type === 'image' ? (
-                                <img src={videoSource.url} alt="Location" className="w-full h-full object-contain" />
+                                <img 
+                                    src={videoSource.url} 
+                                    alt="Location" 
+                                    className="w-full h-full object-contain"
+                                    loading="lazy" 
+                                />
                             ) : videoSource?.type === 'rtsp' && !videoSource.isStreaming ? (
                                 <div className="text-white text-center p-4">
                                     <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
-import { X, Video, Pencil, Trash2 } from "lucide-react";
+import { X, Video, Pencil, Trash2, Copy, Check } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useModalContext } from "../components/ModalContext";
 
@@ -44,6 +44,7 @@ function KameraPageContent() {
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [visibleApiKeys, setVisibleApiKeys] = useState<Record<string, boolean>>({});
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<{ message: string, onConfirm: () => void } | null>(null);
 
   const [form, setForm] = useState({
@@ -160,6 +161,24 @@ function KameraPageContent() {
               }
           }
       });
+  };
+
+  const handleCopyApiKey = (key: string, id: string) => {
+    navigator.clipboard.writeText(key).then(() => {
+        setCopiedId(id);
+        setTimeout(() => setCopiedId(null), 2000); // Reset after 2 seconds
+        showNotification && showNotification("API Key disalin ke clipboard!");
+    });
+  };
+
+  const toggleApiKeyVisibility = (k: Kamera) => {
+    const isVisible = visibleApiKeys[k.id];
+    setVisibleApiKeys(prev => ({ ...prev, [k.id]: !isVisible }));
+    
+    // Auto-copy when showing
+    if (!isVisible && k.api_key) {
+        handleCopyApiKey(k.api_key, k.id);
+    }
   };
 
   useEffect(() => {
@@ -369,16 +388,33 @@ function KameraPageContent() {
                                 <td className="px-4 py-3">{k.zona_arah?.[1]?.arah || '-'}</td>
                                 <td className="px-4 py-3">{k.zona_arah?.[1]?.id_zona_arah || '-'}</td>
                                 <td className="px-4 py-3">
-                                    <button
-                                        onClick={() => setVisibleApiKeys(prev => ({ ...prev, [k.id]: !prev[k.id] }))}
-                                        className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded border"
-                                    >
-                                        {visibleApiKeys[k.id] ? (
-                                            <span className="font-mono text-[10px]">{k.api_key || '-'}</span>
-                                        ) : (
-                                            <span>••••••••</span>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => toggleApiKeyVisibility(k)}
+                                            className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded border min-w-[80px]"
+                                            title={visibleApiKeys[k.id] ? "Sembunyikan" : "Tampilkan & Salin"}
+                                        >
+                                            {visibleApiKeys[k.id] ? (
+                                                <span className="font-mono text-[10px]">{k.api_key || '-'}</span>
+                                            ) : (
+                                                <span>••••••••</span>
+                                            )}
+                                        </button>
+                                        
+                                        {visibleApiKeys[k.id] && k.api_key && (
+                                            <button
+                                                onClick={() => handleCopyApiKey(k.api_key!, k.id)}
+                                                className="p-1 text-gray-500 hover:text-[#24345A] transition-colors"
+                                                title="Salin API Key"
+                                            >
+                                                {copiedId === k.id ? (
+                                                    <Check size={14} className="text-green-600" />
+                                                ) : (
+                                                    <Copy size={14} />
+                                                )}
+                                            </button>
                                         )}
-                                    </button>
+                                    </div>
                                 </td>
                                 <td className="px-4 py-3 text-center">
                                     <div className="flex justify-center gap-2">

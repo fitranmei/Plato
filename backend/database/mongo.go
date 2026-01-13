@@ -64,4 +64,36 @@ func CreateIndexes() {
 	} else {
 		log.Println("Index token berhasil dipastikan")
 	}
+
+	// Index untuk traffic_data (Optimasi Query Utama)
+	trafficDataModel := mongo.IndexModel{
+		Keys: bson.D{
+			{Key: "lokasi_id", Value: 1},  // Filter utama
+			{Key: "timestamp", Value: -1}, // Sort by newest
+		},
+	}
+
+	_, err = DB.Collection("traffic_data").Indexes().CreateOne(ctx, trafficDataModel)
+	if err != nil {
+		log.Printf("Gagal membuat index traffic_data: %v", err)
+	} else {
+		log.Println("Index traffic_data berhasil dipastikan (lokasi_id + timestamp)")
+	}
+
+	// Index untuk traffic_data_archive (Optimasi Arsip)
+	archiveModel := mongo.IndexModel{
+		Keys: bson.D{
+			{Key: "lokasi_id", Value: 1},
+			{Key: "tahun_arsip", Value: 1},
+			{Key: "bulan_arsip", Value: 1},
+			{Key: "timestamp", Value: -1},
+		},
+	}
+
+	_, err = DB.Collection("traffic_data_archive").Indexes().CreateOne(ctx, archiveModel)
+	if err != nil {
+		log.Printf("Gagal membuat index traffic_data_archive: %v", err)
+	} else {
+		log.Println("Index traffic_data_archive berhasil dipastikan")
+	}
 }

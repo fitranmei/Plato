@@ -423,6 +423,12 @@ func DeleteLocation(c *fiber.Ctx) error {
 	}
 	_ = models.DeleteLocationSource(id)
 
+	// Delete associated cameras (Cascade Delete)
+	_, err = database.DB.Collection("cameras").DeleteMany(context.Background(), bson.M{"lokasi_id": id})
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "gagal menghapus kamera terkait"})
+	}
+
 	_, err = database.DB.Collection("locations").DeleteOne(context.Background(), bson.M{"_id": id})
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "gagal menghapus lokasi"})
