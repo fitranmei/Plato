@@ -370,7 +370,11 @@ func ExportRawDataToExcel(c *fiber.Ctx) error {
 	// Waktu cetak dengan format WIB
 	waktuCetak := time.Now()
 	// Convert ke WIB (UTC+7)
-	loc, _ := time.LoadLocation("Asia/Jakarta")
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		// Fallback jika tzdata tidak tersedia
+		loc = time.FixedZone("WIB", 7*60*60)
+	}
 	waktuCetakWIB := waktuCetak.In(loc)
 	f.SetCellValue(sheetName, "A4", "DICETAK TANGGAL : "+waktuCetakWIB.Format("02-01-2006 15:04:05")+" WIB")
 

@@ -89,6 +89,10 @@ export default function LokasiPage() {
         // Step 3
         publik: 'true',
         hide_lokasi: 'false',
+
+        // Step 4 - Source
+        source_type: 'link',
+        source_link: '',
     };
 
     const [form, setForm] = useState(initialForm);
@@ -196,7 +200,7 @@ export default function LokasiPage() {
         } else if (step === 3) {
             if (!validateStep3()) return;
         }
-        setStep((s) => Math.min(3, s + 1));
+        setStep((s) => Math.min(4, s + 1));
     }
 
     function prevStep() {
@@ -249,7 +253,30 @@ export default function LokasiPage() {
                 interval: String(Math.round(data.interval / 60)), // Convert seconds to minutes
                 publik: String(data.publik),
                 hide_lokasi: String(data.hide_lokasi),
+                source_type: 'link',
+                source_link: '',
             });
+
+            // Fetch source if exists
+            try {
+                const sourceRes = await fetch(`/api/locations/${id}/source`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (sourceRes.ok) {
+                    const sourceData = await sourceRes.json();
+                    const source = sourceData.data;
+                    setForm(prev => ({
+                        ...prev,
+                        source_type: source.source_type || 'link',
+                        source_link: source.source_type === 'link' ? source.source_data : '',
+                    }));
+                }
+            } catch (sourceError) {
+                console.log('No source found for this location');
+            }
+
             setEditingId(id);
             setIsModalOpen(true);
             setStep(1);
@@ -309,6 +336,45 @@ export default function LokasiPage() {
             }
 
             const responseData = await res.json();
+            const locationId = editingId || responseData.data?.id;
+
+            // Save source (wajib)
+            if (locationId && form.source_type) {
+                try {
+                    const sourcePayload: any = {
+                        source_type: form.source_type
+                    };
+                    
+                    if (form.source_type === 'link') {
+                        if (!form.source_link) {
+                            showNotification('URL Link harus diisi', 'error');
+                            return;
+                        }
+                        sourcePayload.source_data = form.source_link;
+                    } else if (form.source_type === 'image') {
+                        // Gambar akan diambil dari model kamera, kirim placeholder
+                        sourcePayload.source_data = 'camera_image';
+                    }
+
+                    const sourceMethod = editingId ? 'PUT' : 'POST';
+                    const sourceRes = await fetch(`/api/locations/${locationId}/source`, {
+                        method: sourceMethod,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(sourcePayload)
+                    });
+
+                    if (!sourceRes.ok) {
+                        const sourceErr = await sourceRes.json();
+                        console.error('Error saving source:', sourceErr);
+                        showNotification('Lokasi disimpan, tapi source gagal ditambahkan', 'error');
+                    }
+                } catch (sourceError) {
+                    console.error('Error saving source:', sourceError);
+                }
+            }
 
             showNotification(`Lokasi berhasil ${editingId ? 'diupdate' : 'disimpan'}`, 'success');
             closeModal();
@@ -466,18 +532,22 @@ export default function LokasiPage() {
                             </button>
                             <div className="mb-3">
                                 <h2 className="text-xl font-semibold">{editingId ? 'EDIT DATA LOKASI' : 'TAMBAH DATA LOKASI'}</h2>
-                                <div className="flex items-center gap-6 text-sm text-gray-500 mt-2">
+                                <div className="flex items-center gap-4 text-sm text-gray-500 mt-2">
                                     <div className="flex items-center gap-2">
                                         <div className={`flex items-center justify-center w-6 h-6 text-xs rounded-full ${step===1? 'bg-[#24345A] text-white font-bold' : 'bg-gray-200 text-gray-600'}`}>1</div>
-                                        <span className={`text-xs ${step===1 ? 'font-bold text-[#24345A]' : ''}`}>Identitas Lokasi</span>
+                                        <span className={`text-xs ${step===1 ? 'font-bold text-[#24345A]' : ''}`}>Identitas</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className={`flex items-center justify-center w-6 h-6 text-xs rounded-full ${step===2? 'bg-[#24345A] text-white font-bold' : 'bg-gray-200 text-gray-600'}`}>2</div>
-                                        <span className={`text-xs ${step===2 ? 'font-bold text-[#24345A]' : ''}`}>Karakteristik Jalan</span>
+                                        <span className={`text-xs ${step===2 ? 'font-bold text-[#24345A]' : ''}`}>Karakteristik</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className={`flex items-center justify-center w-6 h-6 text-xs rounded-full ${step===3? 'bg-[#24345A] text-white font-bold' : 'bg-gray-200 text-gray-600'}`}>3</div>
                                         <span className={`text-xs ${step===3 ? 'font-bold text-[#24345A]' : ''}`}>Publikasi</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`flex items-center justify-center w-6 h-6 text-xs rounded-full ${step===4? 'bg-[#24345A] text-white font-bold' : 'bg-gray-200 text-gray-600'}`}>4</div>
+                                        <span className={`text-xs ${step===4 ? 'font-bold text-[#24345A]' : ''}`}>Source</span>
                                     </div>
                                 </div>
                             </div>
@@ -608,6 +678,38 @@ export default function LokasiPage() {
 										</div>
 									</div>
 								)}
+
+								{step === 4 && (
+									<div className="grid grid-cols-1 gap-4">
+										<div>
+											<label className="text-sm font-medium">Tipe Source <span className="text-red-500">*</span></label>
+											<select 
+												name="source_type" 
+												value={form.source_type} 
+												onChange={handleChange} 
+												className={inputClass}
+											>
+												<option value="link">Link Video</option>
+												<option value="image">Gambar</option>
+											</select>
+										</div>
+
+										{form.source_type === 'link' && (
+											<div>
+												<label className="text-sm font-medium">URL Video <span className="text-red-500">*</span></label>
+												<input 
+													name="source_link" 
+													value={form.source_link} 
+													onChange={handleChange} 
+													placeholder="Masukkan URL video" 
+													className={inputClass}
+													required
+												/>
+												{errors.source_link && <div className="text-red-600 text-xs mt-1">{errors.source_link}</div>}
+											</div>
+										)}
+									</div>
+								)}
 							</div>                            <div className="mt-5 flex justify-between items-center">
                                 <div>
                                     {step > 1 && (
@@ -620,7 +722,7 @@ export default function LokasiPage() {
                                     )}
                                 </div>
                                 <div>
-                                    {step < 3 ? (
+                                    {step < 4 ? (
                                         <button 
                                             onClick={nextStep} 
                                             className="bg-[#24345A] hover:bg-[#1e2b4a] text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors"

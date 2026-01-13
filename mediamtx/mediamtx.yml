@@ -1,0 +1,3 @@
+paths:
+  all_others:
+    runOnReady: echo "Stream $MTX_PATH is ready"

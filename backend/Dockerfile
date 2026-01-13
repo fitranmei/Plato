@@ -7,6 +7,9 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
+# Install tzdata (timezone info)
+RUN apk add --no-cache tzdata
+
 # Copy source code
 COPY . .
 
@@ -22,7 +25,7 @@ FROM alpine:latest
 WORKDIR /app
 
 # Install ca-certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates tzdata
 
 # Copy binaries from builder
 COPY --from=builder /app/main .
