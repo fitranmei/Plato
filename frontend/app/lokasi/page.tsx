@@ -30,7 +30,7 @@ export default function LokasiPage() {
         }
     }, [router]);
 
-    // Modal & Form State
+    // State Modal & Form
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [step, setStep] = useState(1);
@@ -67,7 +67,7 @@ export default function LokasiPage() {
     ];
     
     const initialForm = {
-        // Step 1
+        // Langkah 1
         nama_lokasi: '',
         alamat_lokasi: '',
         balai: '',
@@ -77,7 +77,7 @@ export default function LokasiPage() {
         zona_waktu: '',
         keterangan: '',
 
-        // Step 2
+        // Langkah 2
         tipe_arah: '22ud',
         lebar_jalur: '5',
         persentase: '50-50',
@@ -86,18 +86,18 @@ export default function LokasiPage() {
         ukuran_kota: '',
         interval: '15',
 
-        // Step 3
+        // Langkah 3
         publik: 'true',
         hide_lokasi: 'false',
 
-        // Step 4 - Source
+        // Langkah 4 - Sumber
         source_type: 'link',
         source_link: '',
     };
 
     const [form, setForm] = useState(initialForm);
 
-    // Confirmation State
+    // State Konfirmasi
     const [confirmation, setConfirmation] = useState<{ message: string, onConfirm: () => void } | null>(null);
 
     const inputClass = "w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#24345A]/30 text-sm";
@@ -131,7 +131,7 @@ export default function LokasiPage() {
     }, [router]);
 
     useEffect(() => {
-        // Filter locations based on search term
+        // Filter lokasi berdasarkan kata kunci pencarian
         const filtered = locations.filter((location) => 
             location.nama_lokasi.toLowerCase().includes(searchTerm.toLowerCase()) ||
             location.alamat_lokasi.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -188,7 +188,7 @@ export default function LokasiPage() {
     }
 
     function validateStep3() {
-        // No strict validation needed for booleans/selects that have default values
+        // Tidak perlu validasi ketat untuk boolean/select yang memiliki nilai default
         return true;
     }
 
@@ -250,14 +250,14 @@ export default function LokasiPage() {
                 tipe_hambatan: data.tipe_hambatan,
                 kelas_hambatan: data.kelas_hambatan,
                 ukuran_kota: String(data.ukuran_kota),
-                interval: String(Math.round(data.interval / 60)), // Convert seconds to minutes
+                interval: String(Math.round(data.interval / 60)), // Konversi detik ke menit
                 publik: String(data.publik),
                 hide_lokasi: String(data.hide_lokasi),
                 source_type: 'link',
                 source_link: '',
             });
 
-            // Fetch source if exists
+            // Ambil data source jika ada
             try {
                 const sourceRes = await fetch(`/api/locations/${id}/source`, {
                     headers: {
@@ -311,13 +311,13 @@ export default function LokasiPage() {
             latitude: parseFloat(form.latitude),
             longitude: parseFloat(form.longitude),
             zona_waktu: parseFloat(form.zona_waktu) || 7, // Default UTC+7
-            interval: parseInt(form.interval) * 60, // Convert minutes to seconds
+            interval: parseInt(form.interval) * 60, // Konversi menit ke detik
             publik: form.publik === 'true',
             hide_lokasi: form.hide_lokasi === 'true',
             keterangan: form.keterangan
         };
 
-        // Include source data in the main payload so backend Create/UpdateLocation can handle it
+        // Sertakan data source dalam payload utama agar backend Create/UpdateLocation dapat menanganinya
         if (form.source_type === 'link') {
             // @ts-ignore
             payload.source_type = 'link';
@@ -326,7 +326,7 @@ export default function LokasiPage() {
         } else if (form.source_type === 'image') {
             // @ts-ignore
             payload.source_type = 'image';
-            // Use actual uploaded image if available in form (not implemented), otherwise use placeholder
+            // Gunakan gambar yang diunggah jika ada (belum diimplementasikan), jika tidak gunakan placeholder
             const safePlaceholder = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAQAAAC0NkA6AAAALUlEQVR42u3NMQEAAAgDILV/55nAOnA020k6UEQEBAQEBAQEBAQEBAQEBAQEfLhNTSA1w4F3kQAAAABJRU5ErkJggg==";
             // @ts-ignore
             payload.source_data = safePlaceholder;
@@ -357,11 +357,11 @@ export default function LokasiPage() {
                 locationId = responseData.data?.id || responseData.data?._id || responseData.data?.ID || responseData.data?.Id;
             }
 
-            // Source is handled by Create/Update location endpoints (no separate /source call here)
+            // Source ditangani oleh endpoint Create/Update location (tidak ada panggilan /source terpisah di sini)
 
             showNotification(`Lokasi berhasil ${editingId ? 'diupdate' : 'disimpan'}`, 'success');
             closeModal();
-            // Redirect to camera creation if new location
+            // Alihkan ke pembuatan kamera jika lokasi baru
             if (!editingId && responseData.data?.nama_lokasi) {
                 setTimeout(() => {
                     const lokasiName = responseData.data.nama_lokasi;
@@ -369,7 +369,7 @@ export default function LokasiPage() {
                     router.push(`/kamera?openModal=true&lokasi=${encodeURIComponent(lokasiName)}&lokasiId=${lokasiId}`);
                 }, 1000);
             } else {
-                // Refresh data
+                // Segarkan data
                 setTimeout(() => window.location.reload(), 1500); 
             } 
         } catch (error: any) {

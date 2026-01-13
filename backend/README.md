@@ -78,7 +78,7 @@ backend/
 | Variable | Deskripsi | Contoh |
 |----------|-----------|--------|
 | `APP_PORT` | Port server | `8080` |
-| `MONGO_URI` | URI koneksi MongoDB | `mongodb://localhost:27017` |
+| `MONGO_URI` | URL koneksi MongoDB | `mongodb://localhost:27017` |
 | `DB_NAME` | Nama database | `plato` |
 | `JWT_SECRET` | Secret key untuk JWT | `your-secret-key` |
 

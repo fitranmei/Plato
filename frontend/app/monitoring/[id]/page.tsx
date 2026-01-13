@@ -76,7 +76,7 @@ export default function MonitoringPage() {
         userRole 
     } = useMonitoringData(params.id);
 
-    // Video Source State
+    // State Sumber Video
     const [videoSource, setVideoSource] = useState<{
         type: 'hls' | 'youtube' | 'image' | 'rtsp' | 'none',
         url: string,
@@ -210,8 +210,11 @@ export default function MonitoringPage() {
     const dataArah1 = latestTrafficData?.zona_arah_data?.[0];
     const dataArah2 = latestTrafficData?.zona_arah_data?.[1];
 
-    const countArah1 = dataArah1?.total_kendaraan || 0;
-    const countArah2 = dataArah2?.total_kendaraan || 0;
+    const interval = latestTrafficData?.interval_menit || 5;
+    const multiplier = 60 / interval;
+
+    const countArah1 = Math.round((dataArah1?.total_kendaraan || 0) * multiplier);
+    const countArah2 = Math.round((dataArah2?.total_kendaraan || 0) * multiplier);
 
     const speed1 = calculateAvgSpeed(dataArah1) || 0;
     const speed2 = calculateAvgSpeed(dataArah2) || 0;

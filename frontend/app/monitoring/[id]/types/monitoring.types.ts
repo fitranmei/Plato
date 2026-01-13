@@ -44,6 +44,8 @@ export interface TrafficData {
     id: string;
     lokasi_id: string;
     timestamp: string;
+    total_kendaraan?: number;
+    interval_menit?: number;
     zona_arah_data: ZonaArahData[];
     mkji_analysis?: MKJIAnalysis;
     pkji_analysis?: PKJIAnalysis;

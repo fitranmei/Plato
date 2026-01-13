@@ -78,8 +78,6 @@ export const useMonitoringData = (locationId: string | string[]): UseMonitoringD
                 startDate.setUTCHours(0, 0, 0, 0);
                 endDate.setUTCHours(23, 59, 59, 999);
                 
-                console.log('[BAR CHART DEBUG] Query range:', startDate.toISOString(), 'to', endDate.toISOString());
-                
                 const resHistorical = await fetch(
                     `/api/traffic-data?lokasi_id=${locationId}&start_time=${startDate.toISOString()}&end_time=${endDate.toISOString()}&limit=1000`,
                     { headers: { 'Authorization': `Bearer ${token}` } }
@@ -89,19 +87,12 @@ export const useMonitoringData = (locationId: string | string[]): UseMonitoringD
                     const jsonHistorical = await resHistorical.json();
                     const historicalData = jsonHistorical.data || [];
                     
-                    console.log('[BAR CHART DEBUG] Total historical data:', historicalData.length);
-                    if (historicalData.length > 0) {
-                        console.log('[BAR CHART DEBUG] Sample data:', historicalData[0]);
-                    }
-                    
                     // Group by date and sum total_kendaraan per zona_arah
                     const dailyData: Record<string, { arah1: number, arah2: number }> = {};
                     
                     historicalData.forEach((traffic: any) => {
                         const date = new Date(traffic.timestamp);
                         const dateKey = formatDateKey(date);
-                        
-                        console.log('[BAR CHART DEBUG] Processing:', traffic.timestamp, '→', dateKey);
                         
                         if (!dailyData[dateKey]) {
                             dailyData[dateKey] = { arah1: 0, arah2: 0 };
@@ -116,8 +107,6 @@ export const useMonitoringData = (locationId: string | string[]): UseMonitoringD
                             }
                         }
                     });
-                    
-                    console.log('[BAR CHART DEBUG] Daily data aggregated:', dailyData);
                     
                     // Convert to array format for chart (last 7 days)
                     const chartData = [];
@@ -137,8 +126,6 @@ export const useMonitoringData = (locationId: string | string[]): UseMonitoringD
                             arah2: dailyData[dateKey]?.arah2 || 0
                         });
                     }
-                    
-                    console.log('[BAR CHART DEBUG] Final chart data:', chartData);
                     
                     setBarChartData(chartData);
                 }

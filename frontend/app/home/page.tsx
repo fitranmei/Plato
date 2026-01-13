@@ -49,11 +49,9 @@ export default function UserPage() {
           const trafficPromises = rawLocations.map((loc: any) => 
             fetch(`/api/traffic-data/lokasi/${loc.id}/latest`, { headers })
               .then(res => {
-                console.log(`Fetch traffic for ${loc.id}:`, res.status, res.ok);
                 return res.ok ? res.json() : Promise.resolve(null);
               })
               .then(json => {
-                console.log(`Response for ${loc.id}:`, json);
                 return { locationId: loc.id, data: json?.data };
               })
               .catch(err => {
@@ -65,12 +63,10 @@ export default function UserPage() {
           const trafficResults = await Promise.all(trafficPromises);
           const trafficMap: Record<string, any> = {};
           trafficResults.forEach(result => {
-            console.log(`Traffic data for ${result.locationId}:`, result.data ? 'FOUND' : 'NOT FOUND', result.data);
             if (result.data) {
               trafficMap[result.locationId] = result.data;
             }
           });
-          console.log('Final trafficMap:', trafficMap);
           setTrafficDataMap(trafficMap);
         }
 
@@ -127,14 +123,10 @@ export default function UserPage() {
                 const losLevel = traffic?.mkji_analysis?.tingkat_pelayanan || traffic?.pkji_analysis?.tingkat_pelayanan;
                 const status = losLevel ? LOS_TO_STATUS[losLevel] : "Lancar";
                 
-                // Get SMP from total_kendaraan
-                const smp = traffic?.total_kendaraan || 0;
-                
-                console.log(`Location ${loc.id} (${loc.nama_lokasi}):`, {
-                  hasTraffic: !!traffic,
-                  timestamp: traffic?.timestamp,
-                  hide_lokasi: loc.hide_lokasi
-                });
+                // Get SMP from PKJI/MKJI analysis (Volume Hourly)
+                // Fallback to total_kendaraan (raw count) if analysis missing
+                let smp = traffic?.pkji_analysis?.volume_skr || traffic?.mkji_analysis?.arus_smp || traffic?.total_kendaraan || 0;
+                smp = Math.round(smp); // Display as integer
                 
                 // Format timestamp using the same format as monitoring page
                 const timestamp = traffic?.timestamp ? formatTimestampWithZone(traffic.timestamp, (loc as any).zona_waktu || 7) : '-';
