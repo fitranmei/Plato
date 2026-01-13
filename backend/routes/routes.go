@@ -5,12 +5,12 @@ import (
 )
 
 func Setup(app *fiber.App) {
-	api := app.Group("/api")
-	SetupCameraDataRoutes(api)
-
+	SetupCameraDataRoutes(app)
 	SetupAuthRoutes(app)
 	SetupUserRoutes(app)
 	SetupLocationRoutes(app)
+	SetupLocationSourceRoutes(app)
+	SetupRTSPStreamRoutes(app)
 	SetupCameraRoutes(app)
 	SetupKlasifikasiKendaraanRoutes(app)
 	SetupZonaArahRoutes(app)
