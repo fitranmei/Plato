@@ -67,7 +67,7 @@ func extractYouTubeVideoID(url string) string {
 	return ""
 }
 
-func validateSourceRequest(req LocationSourceRequest) (string, bool) {
+func validateSourceRequest(req LocationSourceRequest, allowEmptyImage bool) (string, bool) {
 	if req.SourceType == "" {
 		return "source_type diperlukan", false
 	}
@@ -76,7 +76,11 @@ func validateSourceRequest(req LocationSourceRequest) (string, bool) {
 		return "source_type tidak valid. Pilihan: 'link' atau 'image'", false
 	}
 
+	// For image type, allow empty source_data if allowEmptyImage is true (will generate blank image)
 	if req.SourceData == "" {
+		if req.SourceType == models.SourceTypeImage && allowEmptyImage {
+			return "", true
+		}
 		return "source_data diperlukan", false
 	}
 
@@ -121,7 +125,7 @@ func CreateLocationSource(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "request tidak valid"})
 	}
 
-	if errMsg, valid := validateSourceRequest(req); !valid {
+	if errMsg, valid := validateSourceRequest(req, false); !valid {
 		return c.Status(400).JSON(fiber.Map{"error": errMsg})
 	}
 
@@ -211,34 +215,47 @@ func UpdateLocationSource(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "request tidak valid"})
 	}
 
-	if errMsg, valid := validateSourceRequest(req); !valid {
+	if errMsg, valid := validateSourceRequest(req, true); !valid {
 		return c.Status(400).JSON(fiber.Map{"error": errMsg})
 	}
 
+	// Get old source for cleanup
+	oldSource, _ := models.GetLocationSource(locationID)
+
 	finalSourceData := req.SourceData
 
-	// Handle Image: Convert Base64 to WebP File
+	// Handle Image: Convert Base64 to WebP File or generate blank
 	if req.SourceType == models.SourceTypeImage {
-		// New image uploaded in Base64
-		webPath, err := utils.ProcessBase64Image(req.SourceData, location.Nama_lokasi, locationID)
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{
-				"error":   "Gagal memproses gambar",
-				"details": err.Error(),
-			})
+		var webPath string
+		var err error
+
+		if req.SourceData == "" {
+			// No image data provided, generate blank image
+			webPath, err = utils.GenerateBlankImage(location.Nama_lokasi, locationID)
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{
+					"error":   "Gagal membuat gambar placeholder",
+					"details": err.Error(),
+				})
+			}
+		} else {
+			// New image uploaded in Base64
+			webPath, err = utils.ProcessBase64Image(req.SourceData, location.Nama_lokasi, locationID)
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{
+					"error":   "Gagal memproses gambar",
+					"details": err.Error(),
+				})
+			}
 		}
 		finalSourceData = webPath
 
-		// Note: Old image cleanup is tricky because UpdateLocationSource replaces data.
-		// Ideally we should fetch old source, check if it was image, and delete file.
-		// Let's improve this:
-		oldSource, _ := models.GetLocationSource(locationID)
+		// Cleanup old image if existed
 		if oldSource != nil && oldSource.SourceType == models.SourceTypeImage {
 			utils.CleanupOldImage(oldSource.SourceData)
 		}
 	} else if req.SourceType == models.SourceTypeLink {
 		// If switching to Link, cleanup old image if existed
-		oldSource, _ := models.GetLocationSource(locationID)
 		if oldSource != nil && oldSource.SourceType == models.SourceTypeImage {
 			utils.CleanupOldImage(oldSource.SourceData)
 		}

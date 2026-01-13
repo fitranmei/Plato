@@ -38,6 +38,9 @@ func Register(c *fiber.Ctx) error {
 		role = models.RoleAdmin
 	case string(models.RoleUser):
 		role = models.RoleUser
+	case string(models.RoleSuperAdmin):
+		// Superadmin hanya bisa dibuat melalui seeder
+		return c.Status(403).JSON(fiber.Map{"error": "superadmin hanya dapat dibuat melalui seeder"})
 	default:
 		role = models.RoleUser
 	}

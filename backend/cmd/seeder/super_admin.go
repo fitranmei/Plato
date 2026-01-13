@@ -9,35 +9,64 @@ import (
 	"backend/utils"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
+// SuperAdminData struktur untuk data superadmin
+type SuperAdminData struct {
+	ID       string
+	Username string
+	Email    string
+	Password string
+	Balai    string
+}
+
 func SeedSuperAdmin() {
-	superAdminID := "SAA001"
-	superAdminUsername := "agus"
-	superAdminEmail := "agus@gmail.com"
-	superAdminPassword := "Agus123"
-	superAdminBalai := "Pusat"
-
-	var existingUser models.User
-	err := database.DB.Collection("users").FindOne(context.Background(), bson.M{"role": models.RoleSuperAdmin}).Decode(&existingUser)
-	if err == nil {
-		log.Println("Superadmin sudah ada, tidak perlu dibuat ulang.")
-		return
+	superAdmins := []SuperAdminData{
+		{
+			ID:       "SAA001",
+			Username: "agus",
+			Email:    "agus@gmail.com",
+			Password: "Agus123",
+			Balai:    "Pusat",
+		},
+		// Tambahkan superadmin lain di bawah ini
+		// {
+		// 	ID:       "SAA002",
+		// 	Username: "admin2",
+		// 	Email:    "admin2@gmail.com",
+		// 	Password: "Admin123",
+		// 	Balai:    "Pusat",
+		// },
 	}
 
-	superAdmin := models.User{
-		ID:       superAdminID,
-		Username: superAdminUsername,
-		Email:    superAdminEmail,
-		Password: utils.HashPassword(superAdminPassword),
-		Role:     models.RoleSuperAdmin,
-		Balai:    superAdminBalai,
-	}
+	for _, sa := range superAdmins {
+		superAdmin := models.User{
+			ID:       sa.ID,
+			Username: sa.Username,
+			Email:    sa.Email,
+			Password: utils.HashPassword(sa.Password),
+			Role:     models.RoleSuperAdmin,
+			Balai:    sa.Balai,
+		}
 
-	_, err = database.DB.Collection("users").InsertOne(context.Background(), superAdmin)
-	if err != nil {
-		log.Fatalf("Gagal membuat superadmin: %v", err)
-	}
+		// Upsert: jika ID sudah ada maka replace, jika belum maka insert
+		opts := options.Replace().SetUpsert(true)
+		result, err := database.DB.Collection("users").ReplaceOne(
+			context.Background(),
+			bson.M{"_id": sa.ID},
+			superAdmin,
+			opts,
+		)
+		if err != nil {
+			log.Printf("Gagal membuat/update superadmin %s: %v\n", sa.ID, err)
+			continue
+		}
 
-	log.Printf("Superadmin berhasil dibuat!\nID: %s\nUsername: %s\nPassword: %s\n", superAdminID, superAdminUsername, superAdminPassword)
+		if result.UpsertedCount > 0 {
+			log.Printf("Superadmin baru berhasil dibuat!\nID: %s\nUsername: %s\nPassword: %s\n", sa.ID, sa.Username, sa.Password)
+		} else {
+			log.Printf("Superadmin %s berhasil diupdate!\n", sa.ID)
+		}
+	}
 }

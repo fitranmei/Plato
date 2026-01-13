@@ -34,18 +34,12 @@ func GetInitials(name string) string {
 	return strings.ToUpper(initials)
 }
 
-// ProcessBase64Image converts base64 image to PNG file using Go native library
-// naming format: [INIT]_[LOC-ID]_[TIMESTAMP].png
 func ProcessBase64Image(base64Data, locationName, locationID string) (string, error) {
-	// 1. Prepare directory
-	// Store in backend/public/location_images
 	uploadDir := "./public/location_images"
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
 		return "", fmt.Errorf("failed to create upload directory: %v", err)
 	}
 
-	// 2. Decode Base64
-	// Remove data URI prefix if present (e.g. "data:image/png;base64,")
 	idx := strings.Index(base64Data, ";base64,")
 	var rawData string
 	if idx != -1 {
@@ -59,13 +53,11 @@ func ProcessBase64Image(base64Data, locationName, locationID string) (string, er
 		return "", fmt.Errorf("invalid base64 data: %v", err)
 	}
 
-	// 3. Decode Image (detects PNG/JPEG automatically)
 	img, _, err := image.Decode(bytes.NewReader(decoded))
 	if err != nil {
 		return "", fmt.Errorf("failed to decode image: %v", err)
 	}
 
-	// 4. Save to PNG (WebP requires CGO/ffmpeg, fallback to pure Go PNG)
 	initials := GetInitials(locationName)
 	fileName := fmt.Sprintf("%s_%s_%d.png", initials, locationID, time.Now().Unix())
 	outputFile := filepath.Join(uploadDir, fileName)
@@ -93,4 +85,38 @@ func CleanupOldImage(sourceData string) {
 		path := filepath.Join("./public/location_images", filename)
 		os.Remove(path)
 	}
+}
+
+// GenerateBlankImage creates a blank/placeholder PNG image
+// Used when switching from link to image without providing image data
+func GenerateBlankImage(locationName, locationID string) (string, error) {
+	uploadDir := "./public/location_images"
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		return "", fmt.Errorf("failed to create upload directory: %v", err)
+	}
+
+	width, height := 640, 480
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			img.Set(x, y, image.White)
+		}
+	}
+
+	initials := GetInitials(locationName)
+	fileName := fmt.Sprintf("%s_%s_%d.png", initials, locationID, time.Now().Unix())
+	outputFile := filepath.Join(uploadDir, fileName)
+
+	f, err := os.Create(outputFile)
+	if err != nil {
+		return "", fmt.Errorf("failed to create output file: %v", err)
+	}
+	defer f.Close()
+
+	if err := png.Encode(f, img); err != nil {
+		return "", fmt.Errorf("failed to encode png: %v", err)
+	}
+
+	return "/images/" + fileName, nil
 }
