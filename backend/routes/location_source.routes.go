@@ -25,5 +25,5 @@ func SetupLocationSourceRoutes(router fiber.Router) {
 	options.Get("/", controllers.GetSourceOptions)
 
 	// Serve static images
-	router.Static("/images", "./public/location_images")
+	router.Static("/location-images", "./public/location_images")
 }

@@ -98,14 +98,18 @@ export default function MonitoringPage() {
             
             setLoadingVideo(true);
             const token = localStorage.getItem('token');
+            console.log(`[Monitoring] Fetching video source for ${params.id}...`);
             
             try {
-                const response = await fetch(`/api/streams/${params.id}/playable`, {
+                const response = await fetch(`/api/locations/${params.id}/source/playable`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
+                console.log(`[Monitoring] Response status: ${response.status}`);
+
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('[Monitoring] Video source data:', data);
                     setVideoSource({
                         type: data.type || 'none',
                         url: data.url || '',
@@ -114,10 +118,11 @@ export default function MonitoringPage() {
                         message: data.message
                     });
                 } else {
+                    console.warn('[Monitoring] Failed to fetch video source');
                     setVideoSource({ type: 'none', url: '', message: 'Source tidak tersedia' });
                 }
             } catch (error) {
-                console.error('Error fetching video source:', error);
+                console.error('[Monitoring] Error fetching video source:', error);
                 setVideoSource({ type: 'none', url: '', message: 'Error loading video source' });
             } finally {
                 setLoadingVideo(false);

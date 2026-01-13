@@ -284,12 +284,12 @@ func processBase64ToImage(base64Data, locationName, locationID string) (string, 
 		return "", fmt.Errorf("failed to encode png: %v", err)
 	}
 
-	return "/images/" + fileName, nil
+	return "/api/location-images/" + fileName, nil
 }
 
 // cleanupOldImageFile removes old image file from disk
 func cleanupOldImageFile(sourceData string) {
-	if strings.HasPrefix(sourceData, "/images/") {
+	if strings.HasPrefix(sourceData, "/api/location-images/") || strings.HasPrefix(sourceData, "/images/") {
 		filename := filepath.Base(sourceData)
 		path := filepath.Join("./public/location_images", filename)
 		os.Remove(path)
@@ -329,5 +329,5 @@ func GenerateBlankImage(locationName, locationID string) (string, error) {
 		return "", fmt.Errorf("failed to encode png: %v", err)
 	}
 
-	return "/images/" + fileName, nil
+	return "/api/location-images/" + fileName, nil
 }

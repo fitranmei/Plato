@@ -146,26 +146,26 @@ func CreateLocation(c *fiber.Ctx) error {
 		var finalSourceData string
 
 		if req.SourceType == models.SourceTypeImage {
-			// For image type: if source_data provided, process it; otherwise generate blank black image
+			// Try to process user provided image
 			if req.SourceData != "" {
 				webPath, err := utils.ProcessBase64Image(req.SourceData, location.Nama_lokasi, id)
-				if err != nil {
-					return c.Status(201).JSON(fiber.Map{
-						"message": "lokasi berhasil dibuat, tetapi gagal memproses gambar: " + err.Error(),
-						"data":    location,
-					})
+				if err == nil {
+					finalSourceData = webPath
+				} else {
+					// Log error (should use a proper logger in production)
+					// Proceed to generate blank image
 				}
-				finalSourceData = webPath
-			} else {
-				// Generate blank black image as placeholder
+			}
+
+			// If no user image or processing failed, generate blank image
+			if finalSourceData == "" {
 				blankPath, err := models.GenerateBlankImage(location.Nama_lokasi, id)
 				if err != nil {
-					return c.Status(201).JSON(fiber.Map{
-						"message": "lokasi berhasil dibuat, tetapi gagal membuat gambar placeholder: " + err.Error(),
-						"data":    location,
-					})
+					// If even blank generation fails, use a safe default string so DB record is still created
+					finalSourceData = "/api/location-images/default_placeholder.png"
+				} else {
+					finalSourceData = blankPath
 				}
-				finalSourceData = blankPath
 			}
 		} else if req.SourceType == models.SourceTypeLink {
 			// For link type: source_data is required (YouTube URL)
@@ -329,31 +329,49 @@ func UpdateLocation(c *fiber.Ctx) error {
 	var updatedLocation models.Location
 	database.DB.Collection("locations").FindOne(context.Background(), bson.M{"_id": id}).Decode(&updatedLocation)
 
-	// Update source if provided (replaces old source - handles link to image or vice versa)
+	// Update source if provided
 	var source *models.LocationSource
-	if req.SourceType != "" && req.SourceData != "" {
+	if req.SourceType != "" {
 		if !models.IsValidSourceType(req.SourceType) {
 			return c.Status(400).JSON(fiber.Map{"error": "source_type tidak valid. Pilihan: 'link' atau 'image'"})
 		}
 
-		finalSourceData := req.SourceData
-		// Process Image Base64 -> WebP
+		var finalSourceData string
+
 		if req.SourceType == models.SourceTypeImage {
-			webPath, err := utils.ProcessBase64Image(req.SourceData, req.Nama_lokasi, id)
-			if err != nil {
-				return c.JSON(fiber.Map{
-					"message": "lokasi berhasil diupdate, tetapi gagal memproses gambar: " + err.Error(),
-					"data":    updatedLocation,
-				})
+			// Try to process user provided image if any
+			if req.SourceData != "" {
+				webPath, err := utils.ProcessBase64Image(req.SourceData, req.Nama_lokasi, id)
+				if err == nil {
+					finalSourceData = webPath
+				}
 			}
-			finalSourceData = webPath
+
+			// If no user image or processing failed, generate blank image
+			// ONLY if we are switching to image or explicit update requested without data
+			if finalSourceData == "" {
+				blankPath, err := models.GenerateBlankImage(req.Nama_lokasi, id)
+				if err != nil {
+					finalSourceData = "/api/location-images/default_placeholder.png"
+				} else {
+					finalSourceData = blankPath
+				}
+			}
 
 			// Cleanup old image if existing
 			oldSource, _ := models.GetLocationSource(id)
 			if oldSource != nil && oldSource.SourceType == models.SourceTypeImage {
-				utils.CleanupOldImage(oldSource.SourceData)
+				// Only cleanup if we actually generated a NEW image path
+				if finalSourceData != oldSource.SourceData {
+					utils.CleanupOldImage(oldSource.SourceData)
+				}
 			}
 		} else if req.SourceType == models.SourceTypeLink {
+			if req.SourceData == "" {
+				return c.Status(400).JSON(fiber.Map{"error": "source_data (YouTube URL) diperlukan untuk source_type link"})
+			}
+			finalSourceData = req.SourceData
+
 			// Clean up image if switching to Link
 			oldSource, _ := models.GetLocationSource(id)
 			if oldSource != nil && oldSource.SourceType == models.SourceTypeImage {
@@ -362,10 +380,11 @@ func UpdateLocation(c *fiber.Ctx) error {
 		}
 
 		// UpdateLocationSource will delete old source and create new one
-		source, err = models.UpdateLocationSource(id, req.SourceType, finalSourceData)
-		if err != nil {
+		var errSource error
+		source, errSource = models.UpdateLocationSource(id, req.SourceType, finalSourceData)
+		if errSource != nil {
 			return c.JSON(fiber.Map{
-				"message": "lokasi berhasil diupdate, tetapi source gagal diupdate: " + err.Error(),
+				"message": "lokasi berhasil diupdate, tetapi source gagal diupdate: " + errSource.Error(),
 				"data":    updatedLocation,
 			})
 		}

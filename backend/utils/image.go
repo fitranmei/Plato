@@ -73,14 +73,14 @@ func ProcessBase64Image(base64Data, locationName, locationID string) (string, er
 	}
 
 	// Return public URL path
-	// Assuming /images/ route serves ./public/location_images
-	return "/images/" + fileName, nil
+	// Assuming /api/location-images/ route serves ./public/location_images via Nginx /api/ -> Backend /location-images/
+	return "/api/location-images/" + fileName, nil
 }
 
 // CleanupOldImage removes the file associated with a source data URL
 func CleanupOldImage(sourceData string) {
-	// Check if it looks like a local image path
-	if strings.HasPrefix(sourceData, "/images/") {
+	// Check if it looks like a local image path (support new and legacy paths)
+	if strings.HasPrefix(sourceData, "/api/location-images/") || strings.HasPrefix(sourceData, "/images/") {
 		filename := filepath.Base(sourceData)
 		path := filepath.Join("./public/location_images", filename)
 		os.Remove(path)
@@ -118,5 +118,5 @@ func GenerateBlankImage(locationName, locationID string) (string, error) {
 		return "", fmt.Errorf("failed to encode png: %v", err)
 	}
 
-	return "/images/" + fileName, nil
+	return "/api/location-images/" + fileName, nil
 }

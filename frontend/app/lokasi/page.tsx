@@ -317,6 +317,21 @@ export default function LokasiPage() {
             keterangan: form.keterangan
         };
 
+        // Include source data in the main payload so backend Create/UpdateLocation can handle it
+        if (form.source_type === 'link') {
+            // @ts-ignore
+            payload.source_type = 'link';
+            // @ts-ignore
+            payload.source_data = form.source_link;
+        } else if (form.source_type === 'image') {
+            // @ts-ignore
+            payload.source_type = 'image';
+            // Use actual uploaded image if available in form (not implemented), otherwise use placeholder
+            const safePlaceholder = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAQAAAC0NkA6AAAALUlEQVR42u3NMQEAAAgDILV/55nAOnA020k6UEQEBAQEBAQEBAQEBAQEBAQEfLhNTSA1w4F3kQAAAABJRU5ErkJggg==";
+            // @ts-ignore
+            payload.source_data = safePlaceholder;
+        }
+
         const url = editingId ? `/api/locations/${editingId}` : '/api/locations';
         const method = editingId ? 'PUT' : 'POST';
 
@@ -336,45 +351,13 @@ export default function LokasiPage() {
             }
 
             const responseData = await res.json();
-            const locationId = editingId || responseData.data?.id;
-
-            // Save source (wajib)
-            if (locationId && form.source_type) {
-                try {
-                    const sourcePayload: any = {
-                        source_type: form.source_type
-                    };
-                    
-                    if (form.source_type === 'link') {
-                        if (!form.source_link) {
-                            showNotification('URL Link harus diisi', 'error');
-                            return;
-                        }
-                        sourcePayload.source_data = form.source_link;
-                    } else if (form.source_type === 'image') {
-                        // Gambar akan diambil dari model kamera, kirim placeholder
-                        sourcePayload.source_data = 'camera_image';
-                    }
-
-                    const sourceMethod = editingId ? 'PUT' : 'POST';
-                    const sourceRes = await fetch(`/api/locations/${locationId}/source`, {
-                        method: sourceMethod,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify(sourcePayload)
-                    });
-
-                    if (!sourceRes.ok) {
-                        const sourceErr = await sourceRes.json();
-                        console.error('Error saving source:', sourceErr);
-                        showNotification('Lokasi disimpan, tapi source gagal ditambahkan', 'error');
-                    }
-                } catch (sourceError) {
-                    console.error('Error saving source:', sourceError);
-                }
+            // Ambil id lokasi baru dari berbagai kemungkinan field
+            let locationId = editingId;
+            if (!locationId) {
+                locationId = responseData.data?.id || responseData.data?._id || responseData.data?.ID || responseData.data?.Id;
             }
+
+            // Source is handled by Create/Update location endpoints (no separate /source call here)
 
             showNotification(`Lokasi berhasil ${editingId ? 'diupdate' : 'disimpan'}`, 'success');
             closeModal();
@@ -708,6 +691,15 @@ export default function LokasiPage() {
 												{errors.source_link && <div className="text-red-600 text-xs mt-1">{errors.source_link}</div>}
 											</div>
 										)}
+
+                                        {form.source_type === 'image' && (
+                                            <div>
+                                                <div className="p-4 bg-blue-50 text-blue-800 rounded-lg text-sm border border-blue-200">
+                                                    <p className="font-semibold mb-1">Mode Gambar Terpilih</p>
+                                                    <p>Gambar akan diambil secara otomatis dari data kamera CCTV yang terhubung. Placeholder akan digunakan sementara.</p>
+                                                </div>
+                                            </div>
+                                        )}
 									</div>
 								)}
 							</div>                            <div className="mt-5 flex justify-between items-center">
