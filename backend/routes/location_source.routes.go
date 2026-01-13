@@ -11,9 +11,7 @@ func SetupLocationSourceRoutes(router fiber.Router) {
 	source := router.Group("/locations/:location_id/source")
 	source.Use(middleware.Protected())
 
-	// Get source for a location
 	source.Get("/", controllers.GetLocationSource)
-	// Get playable URL (embed for YouTube, path for image)
 	source.Get("/playable", controllers.GetPlayableURL)
 	source.Post("/", middleware.RestrictTo("superadmin"), controllers.CreateLocationSource)
 	source.Put("/", middleware.RestrictTo("superadmin"), controllers.UpdateLocationSource)
@@ -24,6 +22,5 @@ func SetupLocationSourceRoutes(router fiber.Router) {
 	options.Use(middleware.Protected())
 	options.Get("/", controllers.GetSourceOptions)
 
-	// Serve static images
 	router.Static("/location-images", "./public/location_images")
 }

@@ -52,13 +52,11 @@ func ProcessBase64Image(base64Data, locationName, locationID string) (string, er
 	}
 
 	// Return public URL path
-	// Assuming /api/location-images/ route serves ./public/location_images via Nginx /api/ -> Backend /location-images/
 	return "/api/location-images/" + fileName, nil
 }
 
 // Menghapus file gambar lama
 func CleanupOldImage(sourceData string) {
-	// Check if it looks like a local image path (support new and legacy paths)
 	if strings.HasPrefix(sourceData, "/api/location-images/") || strings.HasPrefix(sourceData, "/images/") {
 		filename := filepath.Base(sourceData)
 		path := filepath.Join("./public/location_images", filename)
