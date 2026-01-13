@@ -9,35 +9,15 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 )
 
-// GetInitials extracts initials from a string (e.g. "Simpang Lima" -> "SL")
-func GetInitials(name string) string {
-	words := strings.Fields(name)
-	initials := ""
-	for _, w := range words {
-		if len(w) > 0 {
-			initials += string(w[0])
-		}
-	}
-	if initials == "" {
-		initials = "LOC"
-	}
-
-	// Remove non-alphanumeric characters
-	reg, _ := regexp.Compile("[^a-zA-Z0-9]+")
-	initials = reg.ReplaceAllString(initials, "")
-
-	return strings.ToUpper(initials)
-}
-
+// Mengkonversi gambar base64 ke file PNG
 func ProcessBase64Image(base64Data, locationName, locationID string) (string, error) {
 	uploadDir := "./public/location_images"
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
-		return "", fmt.Errorf("failed to create upload directory: %v", err)
+		return "", fmt.Errorf("gagal membuat direktori upload: %v", err)
 	}
 
 	idx := strings.Index(base64Data, ";base64,")
@@ -50,36 +30,32 @@ func ProcessBase64Image(base64Data, locationName, locationID string) (string, er
 
 	decoded, err := base64.StdEncoding.DecodeString(rawData)
 	if err != nil {
-		return "", fmt.Errorf("invalid base64 data: %v", err)
+		return "", fmt.Errorf("data base64 tidak valid: %v", err)
 	}
 
 	img, _, err := image.Decode(bytes.NewReader(decoded))
 	if err != nil {
-		return "", fmt.Errorf("failed to decode image: %v", err)
+		return "", fmt.Errorf("gagal decode gambar: %v", err)
 	}
 
-	initials := GetInitials(locationName)
-	fileName := fmt.Sprintf("%s_%s_%d.png", initials, locationID, time.Now().Unix())
+	fileName := fmt.Sprintf("IMG_%s_%d.png", locationID, time.Now().Unix())
 	outputFile := filepath.Join(uploadDir, fileName)
 
 	f, err := os.Create(outputFile)
 	if err != nil {
-		return "", fmt.Errorf("failed to create output file: %v", err)
+		return "", fmt.Errorf("gagal membuat file output: %v", err)
 	}
 	defer f.Close()
 
 	if err := png.Encode(f, img); err != nil {
-		return "", fmt.Errorf("failed to encode png: %v", err)
+		return "", fmt.Errorf("gagal encode png: %v", err)
 	}
 
-	// Return public URL path
-	// Assuming /images/ route serves ./public/location_images
 	return "/images/" + fileName, nil
 }
 
-// CleanupOldImage removes the file associated with a source data URL
+// Menghapus file gambar lama
 func CleanupOldImage(sourceData string) {
-	// Check if it looks like a local image path
 	if strings.HasPrefix(sourceData, "/images/") {
 		filename := filepath.Base(sourceData)
 		path := filepath.Join("./public/location_images", filename)
@@ -87,12 +63,11 @@ func CleanupOldImage(sourceData string) {
 	}
 }
 
-// GenerateBlankImage creates a blank/placeholder PNG image
-// Used when switching from link to image without providing image data
+// Membuat gambar blank untuk placeholder kosong
 func GenerateBlankImage(locationName, locationID string) (string, error) {
 	uploadDir := "./public/location_images"
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
-		return "", fmt.Errorf("failed to create upload directory: %v", err)
+		return "", fmt.Errorf("gagal membuat direktori upload: %v", err)
 	}
 
 	width, height := 640, 480
@@ -104,18 +79,17 @@ func GenerateBlankImage(locationName, locationID string) (string, error) {
 		}
 	}
 
-	initials := GetInitials(locationName)
-	fileName := fmt.Sprintf("%s_%s_%d.png", initials, locationID, time.Now().Unix())
+	fileName := fmt.Sprintf("IMG_%s_%d.png", locationID, time.Now().Unix())
 	outputFile := filepath.Join(uploadDir, fileName)
 
 	f, err := os.Create(outputFile)
 	if err != nil {
-		return "", fmt.Errorf("failed to create output file: %v", err)
+		return "", fmt.Errorf("gagal membuat file output: %v", err)
 	}
 	defer f.Close()
 
 	if err := png.Encode(f, img); err != nil {
-		return "", fmt.Errorf("failed to encode png: %v", err)
+		return "", fmt.Errorf("gagal encode png: %v", err)
 	}
 
 	return "/images/" + fileName, nil
