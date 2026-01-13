@@ -47,7 +47,7 @@ services:
     depends_on:
       - backend
 
-  # Nginx Reverse Proxy (Optional - untuk production)
+  # Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
     container_name: plato-nginx
