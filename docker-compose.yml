@@ -30,6 +30,8 @@ services:
       MONGO_URI: ${MONGO_URI}
       DB_NAME: ${DB_NAME}
       JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - backend-images:/app/public/location_images
     networks:
       - plato-network
 
