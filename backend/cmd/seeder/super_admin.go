@@ -12,7 +12,6 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
-// SuperAdminData struktur untuk data superadmin
 type SuperAdminData struct {
 	ID       string
 	Username string
@@ -25,19 +24,19 @@ func SeedSuperAdmin() {
 	superAdmins := []SuperAdminData{
 		{
 			ID:       "SAA001",
-			Username: "agus",
-			Email:    "agus@gmail.com",
-			Password: "Agus123",
+			Username: "intens",
+			Email:    "intens@gmail.com",
+			Password: "1nt3n5",
 			Balai:    "Pusat",
 		},
 		// Tambahkan superadmin lain di bawah ini
-		// {
-		// 	ID:       "SAA002",
-		// 	Username: "admin2",
-		// 	Email:    "admin2@gmail.com",
-		// 	Password: "Admin123",
-		// 	Balai:    "Pusat",
-		// },
+		{
+			ID:       "SAA002",
+			Username: "nizhar",
+			Email:    "nizhar@gmail.com",
+			Password: "okyys",
+			Balai:    "Pusat",
+		},
 	}
 
 	for _, sa := range superAdmins {
@@ -50,7 +49,7 @@ func SeedSuperAdmin() {
 			Balai:    sa.Balai,
 		}
 
-		// Upsert: jika ID sudah ada maka replace, jika belum maka insert
+		// Jika ID sudah ada maka replace, jika belum maka insert
 		opts := options.Replace().SetUpsert(true)
 		result, err := database.DB.Collection("users").ReplaceOne(
 			context.Background(),
