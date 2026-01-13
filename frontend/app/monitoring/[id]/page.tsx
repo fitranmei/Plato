@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
+import { Video } from 'lucide-react';
 import { useModalContext } from '../../components/ModalContext';
 import { AreaChart, Area, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useMonitoringData } from './hooks/useMonitoringData';
@@ -11,6 +12,56 @@ import { ChartCard } from './components/Charts/ChartCard';
 import { TrafficPieChart } from './components/Charts/TrafficPieChart';
 import { TrafficBarChart } from './components/Charts/TrafficBarChart';
 import { formatTimestampWithZone } from './utils/dateHelpers';
+import dynamic from 'next/dynamic';
+import { useEffect, useRef } from 'react';
+import Hls from 'hls.js';
+
+const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
+
+// Component untuk HLS Video Player
+function HLSPlayer({ src }: { src: string }) {
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                enableWorker: true,
+                lowLatencyMode: true,
+            });
+            hls.loadSource(src);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                video.play().catch(e => console.log("Autoplay blocked:", e));
+            });
+            hls.on(Hls.Events.ERROR, (event, data) => {
+                console.log("HLS Error:", data);
+            });
+
+            return () => {
+                hls.destroy();
+            };
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            // Safari native HLS
+            video.src = src;
+            video.addEventListener('loadedmetadata', () => {
+                video.play().catch(e => console.log("Autoplay blocked:", e));
+            });
+        }
+    }, [src]);
+
+    return (
+        <video
+            ref={videoRef}
+            controls
+            muted
+            playsInline
+            className="w-full h-full object-contain"
+        />
+    );
+}
 
 export default function MonitoringPage() {
     const params = useParams();
@@ -25,10 +76,56 @@ export default function MonitoringPage() {
         userRole 
     } = useMonitoringData(params.id);
 
+    // Video Source State
+    const [videoSource, setVideoSource] = useState<{
+        type: 'hls' | 'youtube' | 'image' | 'rtsp' | 'none',
+        url: string,
+        embedUrl?: string,
+        isStreaming?: boolean,
+        message?: string
+    } | null>(null);
+    const [loadingVideo, setLoadingVideo] = useState(true);
+
     // Export State
     const [showExportModal, setShowExportModal] = useState(false);
     const [exportStartDate, setExportStartDate] = useState("");
     const [exportEndDate, setExportEndDate] = useState("");
+
+    // Fetch Video Source
+    useEffect(() => {
+        const fetchVideoSource = async () => {
+            if (!params.id) return;
+            
+            setLoadingVideo(true);
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`/api/streams/${params.id}/playable`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    setVideoSource({
+                        type: data.type || 'none',
+                        url: data.url || '',
+                        embedUrl: data.embed_url,
+                        isStreaming: data.is_streaming,
+                        message: data.message
+                    });
+                } else {
+                    setVideoSource({ type: 'none', url: '', message: 'Source tidak tersedia' });
+                }
+            } catch (error) {
+                console.error('Error fetching video source:', error);
+                setVideoSource({ type: 'none', url: '', message: 'Error loading video source' });
+            } finally {
+                setLoadingVideo(false);
+            }
+        };
+        
+        fetchVideoSource();
+    }, [params.id]);
 
     const handleExport = () => {
         if (!exportStartDate || !exportEndDate) {
@@ -159,15 +256,60 @@ export default function MonitoringPage() {
                     </div>
 
                     <div className="bg-white rounded-xl shadow-lg h-full min-h-[400px] flex flex-col relative overflow-hidden">
-                        {/* YouTube Embed */}
-                        <div className="flex-1 relative">
-                            <iframe
-                                className="absolute inset-0 w-full h-full"
-                                src="https://www.youtube.com/embed/wDchsz8nmbo?autoplay=1&mute=1&controls=1&rel=0"
-                                title="Live Camera Feed"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                            />
+                        {/* Video Player / Feed */}
+                        <div className="flex-1 relative bg-black flex items-center justify-center">
+                            {loadingVideo ? (
+                                <div className="text-white">Loading video...</div>
+                            ) : videoSource?.type === 'hls' && videoSource.isStreaming ? (
+                                <HLSPlayer src={videoSource.url} />
+                            ) : videoSource?.type === 'youtube' && videoSource.embedUrl ? (
+                                <iframe
+                                    src={videoSource.embedUrl}
+                                    className="w-full h-full"
+                                    allow="autoplay; encrypted-media"
+                                    allowFullScreen
+                                />
+                            ) : videoSource?.type === 'image' ? (
+                                <img src={videoSource.url} alt="Location" className="w-full h-full object-contain" />
+                            ) : videoSource?.type === 'rtsp' && !videoSource.isStreaming ? (
+                                <div className="text-white text-center p-4">
+                                    <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                                    <p className="mb-2">{videoSource.message}</p>
+                                    <p className="text-sm text-gray-400">URL: {videoSource.url}</p>
+                                    {userRole === 'superadmin' && (
+                                        <button
+                                            onClick={async () => {
+                                                const token = localStorage.getItem('token');
+                                                try {
+                                                    const res = await fetch(`/api/streams/${params.id}/start`, {
+                                                        method: 'POST',
+                                                        headers: { 'Authorization': `Bearer ${token}` }
+                                                    });
+                                                    if (res.ok) {
+                                                        showNotification('Stream dimulai', 'success');
+                                                        // Refresh video source
+                                                        setTimeout(() => window.location.reload(), 2000);
+                                                    } else {
+                                                        const err = await res.json();
+                                                        showNotification(err.error || 'Gagal memulai stream', 'error');
+                                                    }
+                                                } catch (error) {
+                                                    showNotification('Error memulai stream', 'error');
+                                                }
+                                            }}
+                                            className="mt-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+                                        >
+                                            Start RTSP Stream
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-white text-center p-4">
+                                    <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                                    <p>Video source belum dikonfigurasi untuk lokasi ini</p>
+                                    <p className="text-sm text-gray-400 mt-2">Hubungi admin untuk menambahkan source</p>
+                                </div>
+                            )}
                         </div>
                         {/* Footer with timestamp */}
                         <div className="bg-white p-4 border-t border-gray-200">

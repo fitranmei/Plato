@@ -64,6 +64,20 @@ services:
       - frontend
       - backend
 
+  # Media Server (RTSP to HLS Converter)
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: plato-mediamtx
+    restart: unless-stopped
+    ports:
+      - "8554:8554" # RTSP Server
+      - "1935:1935" # RTMP Server
+      - "8888:8888" # HLS Server
+    volumes:
+      - ./mediamtx/mediamtx.yml:/mediamtx.yml
+    networks:
+      - plato-network
+
 networks:
   plato-network:
     driver: bridge

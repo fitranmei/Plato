@@ -7,6 +7,9 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
+# Install tzdata (timezone info)
+RUN apt-get update && apt-get install -y tzdata
+
 # Copy source code
 COPY . .
 
