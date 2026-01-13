@@ -13,6 +13,8 @@ func SetupLocationSourceRoutes(router fiber.Router) {
 
 	// Get source for a location
 	source.Get("/", controllers.GetLocationSource)
+	// Get playable URL (embed for YouTube, path for image)
+	source.Get("/playable", controllers.GetPlayableURL)
 	source.Post("/", middleware.RestrictTo("superadmin"), controllers.CreateLocationSource)
 	source.Put("/", middleware.RestrictTo("superadmin"), controllers.UpdateLocationSource)
 	source.Delete("/", middleware.RestrictTo("superadmin"), controllers.DeleteLocationSource)

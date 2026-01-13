@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"context"
+	"regexp"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -14,6 +16,55 @@ import (
 type LocationSourceRequest struct {
 	SourceType string `json:"source_type"` // "link" or "image"
 	SourceData string `json:"source_data"` // URL for link, base64 string for image
+}
+
+// isValidURL checks if the string is a valid URL
+func isValidURL(url string) bool {
+	lowerURL := strings.ToLower(strings.TrimSpace(url))
+	return strings.HasPrefix(lowerURL, "http://") || strings.HasPrefix(lowerURL, "https://")
+}
+
+// isYouTubeURL checks if URL is a YouTube link
+func isYouTubeURL(url string) bool {
+	lowerURL := strings.ToLower(url)
+	return strings.Contains(lowerURL, "youtube.com") || strings.Contains(lowerURL, "youtu.be")
+}
+
+// extractYouTubeVideoID extracts video ID from YouTube URL
+func extractYouTubeVideoID(url string) string {
+	// Handle youtu.be/VIDEO_ID
+	if strings.Contains(url, "youtu.be/") {
+		re := regexp.MustCompile(`youtu\.be/([a-zA-Z0-9_-]{11})`)
+		matches := re.FindStringSubmatch(url)
+		if len(matches) > 1 {
+			return matches[1]
+		}
+	}
+
+	// Handle youtube.com/watch?v=VIDEO_ID
+	if strings.Contains(url, "youtube.com") {
+		re := regexp.MustCompile(`[?&]v=([a-zA-Z0-9_-]{11})`)
+		matches := re.FindStringSubmatch(url)
+		if len(matches) > 1 {
+			return matches[1]
+		}
+
+		// Handle youtube.com/embed/VIDEO_ID
+		re = regexp.MustCompile(`/embed/([a-zA-Z0-9_-]{11})`)
+		matches = re.FindStringSubmatch(url)
+		if len(matches) > 1 {
+			return matches[1]
+		}
+
+		// Handle youtube.com/live/VIDEO_ID
+		re = regexp.MustCompile(`/live/([a-zA-Z0-9_-]{11})`)
+		matches = re.FindStringSubmatch(url)
+		if len(matches) > 1 {
+			return matches[1]
+		}
+	}
+
+	return ""
 }
 
 func validateSourceRequest(req LocationSourceRequest) (string, bool) {
@@ -30,8 +81,9 @@ func validateSourceRequest(req LocationSourceRequest) (string, bool) {
 	}
 
 	if req.SourceType == models.SourceTypeLink {
-		if len(req.SourceData) < 10 {
-			return "link tidak valid", false
+		// Accept any valid URL (http/https)
+		if !isValidURL(req.SourceData) {
+			return "link harus berupa URL yang valid (http:// atau https://)", false
 		}
 	}
 
@@ -241,4 +293,49 @@ func GetSourceOptions(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"source_types": models.SourceTypeOptions,
 	})
+}
+
+// GetPlayableURL returns playable URL for a location source
+// For YouTube: returns embed URL
+// For Image: returns image path
+func GetPlayableURL(c *fiber.Ctx) error {
+	locationID := c.Params("location_id")
+
+	// Get location source
+	source, err := models.GetLocationSource(locationID)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "source tidak ditemukan untuk lokasi ini"})
+	}
+
+	response := fiber.Map{
+		"location_id": locationID,
+		"source_type": source.SourceType,
+	}
+
+	if source.SourceType == models.SourceTypeImage {
+		response["type"] = "image"
+		response["url"] = source.SourceData
+		return c.JSON(response)
+	}
+
+	// For link type (YouTube only now)
+	if isYouTubeURL(source.SourceData) {
+		videoID := extractYouTubeVideoID(source.SourceData)
+		if videoID != "" {
+			response["type"] = "youtube"
+			response["url"] = source.SourceData
+			response["embed_url"] = "https://www.youtube.com/embed/" + videoID
+			response["video_id"] = videoID
+		} else {
+			response["type"] = "youtube"
+			response["url"] = source.SourceData
+			response["error"] = "tidak dapat mengekstrak video ID"
+		}
+	} else {
+		// Fallback for any other link
+		response["type"] = "direct"
+		response["url"] = source.SourceData
+	}
+
+	return c.JSON(response)
 }

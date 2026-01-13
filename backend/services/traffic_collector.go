@@ -19,7 +19,6 @@ const (
 type TrafficCollectorService struct {
 	locationTickers map[string]*time.Ticker
 	stopChan        chan bool
-	dummyGenerator  *DummyDataGenerator
 }
 
 func NewTrafficCollectorService() *TrafficCollectorService {
@@ -36,17 +35,11 @@ func (s *TrafficCollectorService) Start() {
 	}
 	s.logLocationStatus()
 
-	s.dummyGenerator = NewDummyDataGenerator(s)
-	go s.dummyGenerator.Start()
 	go s.monitorInactiveLocations()
 	go s.scheduleDailyLHRAnalysis()
 }
 
 func (s *TrafficCollectorService) Stop() {
-	if s.dummyGenerator != nil {
-		s.dummyGenerator.Stop()
-	}
-
 	for locationID, ticker := range s.locationTickers {
 		if ticker != nil {
 			ticker.Stop()

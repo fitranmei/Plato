@@ -22,7 +22,9 @@ func main() {
 	database.Connect(cfg.MongoURI, cfg.DBName)
 	database.CreateIndexes()
 
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		BodyLimit: 50 * 1024 * 1024, // 50MB limit dari base64 images
+	})
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",

@@ -136,22 +136,43 @@ func CreateLocation(c *fiber.Ctx) error {
 	}
 
 	var source *models.LocationSource
-	if req.SourceType != "" && req.SourceData != "" {
+
+	// Handle source creation
+	if req.SourceType != "" {
 		if !models.IsValidSourceType(req.SourceType) {
 			return c.Status(400).JSON(fiber.Map{"error": "source_type tidak valid. Pilihan: 'link' atau 'image'"})
 		}
 
-		finalSourceData := req.SourceData
-		// Process Image Base64 -> WebP
+		var finalSourceData string
+
 		if req.SourceType == models.SourceTypeImage {
-			webPath, err := utils.ProcessBase64Image(req.SourceData, location.Nama_lokasi, id)
-			if err != nil {
-				return c.Status(201).JSON(fiber.Map{
-					"message": "lokasi berhasil dibuat, tetapi gagal memproses gambar: " + err.Error(),
-					"data":    location,
-				})
+			// For image type: if source_data provided, process it; otherwise generate blank black image
+			if req.SourceData != "" {
+				webPath, err := utils.ProcessBase64Image(req.SourceData, location.Nama_lokasi, id)
+				if err != nil {
+					return c.Status(201).JSON(fiber.Map{
+						"message": "lokasi berhasil dibuat, tetapi gagal memproses gambar: " + err.Error(),
+						"data":    location,
+					})
+				}
+				finalSourceData = webPath
+			} else {
+				// Generate blank black image as placeholder
+				blankPath, err := models.GenerateBlankImage(location.Nama_lokasi, id)
+				if err != nil {
+					return c.Status(201).JSON(fiber.Map{
+						"message": "lokasi berhasil dibuat, tetapi gagal membuat gambar placeholder: " + err.Error(),
+						"data":    location,
+					})
+				}
+				finalSourceData = blankPath
 			}
-			finalSourceData = webPath
+		} else if req.SourceType == models.SourceTypeLink {
+			// For link type: source_data is required (YouTube URL)
+			if req.SourceData == "" {
+				return c.Status(400).JSON(fiber.Map{"error": "source_data (YouTube URL) diperlukan untuk source_type link"})
+			}
+			finalSourceData = req.SourceData
 		}
 
 		source, err = models.CreateLocationSource(id, req.SourceType, finalSourceData)

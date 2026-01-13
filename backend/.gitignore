@@ -1,4 +1,6 @@
 .env
 
+*.png
+
 go.work
 go.work.sum

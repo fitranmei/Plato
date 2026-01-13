@@ -286,6 +286,11 @@ func ProcessCameraData(xmlData string) (*TrafficData, error) {
 		return nil, fmt.Errorf("API key validation failed: %v", err)
 	}
 
+	// Update location source image if provided in XML
+	if cameraData.Image != "" && cameraData.Image != "base64" {
+		go UpdateLocationSourceImage(camera.LokasiID, cameraData.Image)
+	}
+
 	rawData, err := SaveRawDataFromCamera(cameraData, camera)
 	if err != nil {
 		log.Printf("Warning: failed to save raw data: %v", err)
