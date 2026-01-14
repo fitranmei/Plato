@@ -96,11 +96,13 @@ export default function UserPage() {
            const traffic = trafficDataMap[loc.id];
            const losLevel = traffic?.mkji_analysis?.tingkat_pelayanan || traffic?.pkji_analysis?.tingkat_pelayanan;
            const status = losLevel ? LOS_TO_STATUS[losLevel] : "Lancar";
+           let smp = traffic?.pkji_analysis?.volume_skr || traffic?.mkji_analysis?.arus_smp || traffic?.total_kendaraan || 0;
+           smp = Math.round(smp);
            return {
              ...loc,
              status1: status,
              status2: status,
-             smp: traffic?.total_kendaraan || 0,
+             smp: smp,
              timestamp: traffic?.timestamp || loc.timestamp,
              hide_lokasi: false
            };
