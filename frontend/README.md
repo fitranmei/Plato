@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dokumentasi Frontend PLATO
 
-## Getting Started
+## Ringkasan Proyek
+Aplikasi frontend PLATO dibangun menggunakan **Next.js 14** dengan App Router. Aplikasi ini berfungsi sebagai dashboard pemantauan lalu lintas (Traffic Monitoring System) yang berinteraksi dengan API backend Go.
 
-First, run the development server:
+## Teknologi Utama
+- **Framework:** Next.js 14 (App Router)
+- **Bahasa:** TypeScript
+- **Styling:** Tailwind CSS
+- **Peta:** React Leaflet & Leaflet CSS
+- **Visualisasi Data:** Recharts
+- **Icon:** Heroicons (via SVG langsung) / React Icons
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Struktur Direktori
+```
+frontend/
+├── app/                  # Direktori utama Next.js App Router
+│   ├── components/       # Komponen UI reusable (Header, Sidebar, Map, Charts)
+│   ├── home/             # Halaman Dashboard Utama
+│   ├── login/            # Halaman Login
+│   ├── lokasi/           # Manajemen Data Lokasi
+│   ├── monitoring/       # Halaman Detail Monitoring per Lokasi
+│   ├── kamera/           # Halaman Manajemen Kamera
+│   ├── kendaraan/        # Halaman Klasifikasi Kendaraan
+│   ├── manajemen-user/   # Halaman Admin User (RBAC)
+│   ├── globals.css       # Style global & Tailwind directives
+│   ├── layout.tsx        # Root layout aplikasi
+│   └── page.tsx          # Root page (redirects to /login)
+├── public/               # Aset statis (images, icons)
+├── tailwind.config.ts    # Konfigurasi Tailwind
+└── next.config.mjs       # Konfigurasi Next.js
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Arsitektur & Pola Desain
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 1. Layout & Shell (`AppShell.tsx`)
+Aplikasi menggunakan pola "App Shell" untuk membungkus semua halaman yang membutuhkan otentikasi.
+- **Path:** `app/components/AppShell.tsx`
+- **Fungsi:** 
+  - Mengecek otentikasi (Token di LocalStorage).
+  - Merender `Sidebar` dan `Header` secara kondisional (tidak dirender di halaman login).
+  - Mengelola state global UI (loading states).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 2. Otentikasi & Otorisasi
+Otentikasi dilakukan sepenuhnya di sisi klien (Client-Side Auth).
+- **Login:** Token JWT disimpan di `localStorage` setelah login berhasil.
+- **Proteksi Rute:** `AppShell` akan me-redirect user ke `/login` jika token tidak ditemukan.
+- **RBAC (Role-Based Access Control):** 
+  - Role user disimpan di `localStorage` (`role`).
+  - **Sidebar (`Sidebar.tsx`)** menyembunyikan menu tertentu (misal: "Manajemen User") jika role bukan `Super Admin`.
 
-## Learn More
+### 3. Manajemen State
+- **Local State:** Menggunakan `useState` dan `useEffect` untuk data per halaman.
+- **Global State:** Menggunakan React Context (`ModalContext.tsx`) untuk notifikasi global dan state modal, menghindari penggunaan library state management berat seperti Redux.
 
-To learn more about Next.js, take a look at the following resources:
+### 4. Integrasi Peta (`MapWrapper` & `MapPicker`)
+Peta diimplementasikan menggunakan `react-leaflet`.
+- Karena Leaflet membutuhkan window object, komponen peta dimuat secara **Dynamic Import** dengan `ssr: false`.
+- Lokasi dan status lalu lintas (Lancar/Padat/Macet) dirender sebagai Marker dengan warna dinamis.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 5. Visualisasi Data
+Halaman monitoring (`app/monitoring/[id]`) menggunakan library **Recharts** untuk menampilkan grafik lalu lintas real-time.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Komponen Kunci
 
-## Deploy on Vercel
+### `Sidebar.tsx`
+Navigasi utama aplikasi. Menu yang ditampilkan dinamis berdasarkan role user.
+- **Lokasi:** `app/components/Sidebar.tsx`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### `Header.tsx`
+Header bagian atas yang menampilkan judul halaman dinamis dan tombol profil/logout.
+- **Lokasi:** `app/components/Header.tsx`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### `HomeCard.tsx`
+Kartu ringkasan untuk setiap lokasi di halaman dashboard utama. Menampilkan status koneksi, SMP (Satuan Mobil Penumpang), dan status kelancaran.
+
+## Panduan Pengembangan
+
+### Menjalankan Development Server
+```bash
+npm install
+npm run dev
+```
+
+### Build untuk Produksi
+```bash
+npm run build
+npm start
+```
+
+### Konfigurasi Environment
+Pastikan file `.env` atau variable environment server dikonfigurasi dengan URL backend yang sesuai jika tidak menggunakan proxy Nginx default.
+
+## Deployment
+Aplikasi ini di-containerisasi menggunakan **Docker**. File `Dockerfile` tersedia di root direktori frontend untuk build production image.
