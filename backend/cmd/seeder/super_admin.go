@@ -29,7 +29,6 @@ func SeedSuperAdmin() {
 			Password: "1nt3n5",
 			Balai:    "Pusat",
 		},
-		// Tambahkan superadmin lain di bawah ini
 		{
 			ID:       "SAA002",
 			Username: "nizhar",
@@ -37,6 +36,14 @@ func SeedSuperAdmin() {
 			Password: "okyys",
 			Balai:    "Pusat",
 		},
+		// Tambahkan superadmin lain di bawah ini
+		//{
+		//	ID:       "SAA003",
+		//	Username: "agus",
+		//	Email:    "agus@gmail.com",
+		//	Password: "Agus123",
+		//	Balai:    "Pusat",
+		//},
 	}
 
 	for _, sa := range superAdmins {

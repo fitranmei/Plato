@@ -14,25 +14,25 @@ import (
 )
 
 type LocationSourceRequest struct {
-	SourceType string `json:"source_type"` // "link" or "image"
-	SourceData string `json:"source_data"` // URL for link, base64 string for image
+	SourceType string `json:"source_type"` // "link" atau "image"
+	SourceData string `json:"source_data"` // URL untuk link, string base64 untuk image
 }
 
-// isValidURL checks if the string is a valid URL
+// Mengecek apakah string adalah URL yang valid (http/https)
 func isValidURL(url string) bool {
 	lowerURL := strings.ToLower(strings.TrimSpace(url))
 	return strings.HasPrefix(lowerURL, "http://") || strings.HasPrefix(lowerURL, "https://")
 }
 
-// isYouTubeURL checks if URL is a YouTube link
+// Mengecek apakah URL adalah link YouTube
 func isYouTubeURL(url string) bool {
 	lowerURL := strings.ToLower(url)
 	return strings.Contains(lowerURL, "youtube.com") || strings.Contains(lowerURL, "youtu.be")
 }
 
-// extractYouTubeVideoID extracts video ID from YouTube URL
+// Mengekstrak video ID dari URL YouTube
 func extractYouTubeVideoID(url string) string {
-	// Handle youtu.be/VIDEO_ID
+	// youtu.be/VIDEO_ID
 	if strings.Contains(url, "youtu.be/") {
 		re := regexp.MustCompile(`youtu\.be/([a-zA-Z0-9_-]{11})`)
 		matches := re.FindStringSubmatch(url)
@@ -41,7 +41,7 @@ func extractYouTubeVideoID(url string) string {
 		}
 	}
 
-	// Handle youtube.com/watch?v=VIDEO_ID
+	// youtube.com/watch?v=VIDEO_ID
 	if strings.Contains(url, "youtube.com") {
 		re := regexp.MustCompile(`[?&]v=([a-zA-Z0-9_-]{11})`)
 		matches := re.FindStringSubmatch(url)
@@ -49,14 +49,14 @@ func extractYouTubeVideoID(url string) string {
 			return matches[1]
 		}
 
-		// Handle youtube.com/embed/VIDEO_ID
+		// youtube.com/embed/VIDEO_ID
 		re = regexp.MustCompile(`/embed/([a-zA-Z0-9_-]{11})`)
 		matches = re.FindStringSubmatch(url)
 		if len(matches) > 1 {
 			return matches[1]
 		}
 
-		// Handle youtube.com/live/VIDEO_ID
+		// youtube.com/live/VIDEO_ID
 		re = regexp.MustCompile(`/live/([a-zA-Z0-9_-]{11})`)
 		matches = re.FindStringSubmatch(url)
 		if len(matches) > 1 {
@@ -67,6 +67,7 @@ func extractYouTubeVideoID(url string) string {
 	return ""
 }
 
+// Validasi data request sumber lokasi
 func validateSourceRequest(req LocationSourceRequest, allowEmptyImage bool) (string, bool) {
 	if req.SourceType == "" {
 		return "source_type diperlukan", false
@@ -76,7 +77,6 @@ func validateSourceRequest(req LocationSourceRequest, allowEmptyImage bool) (str
 		return "source_type tidak valid. Pilihan: 'link' atau 'image'", false
 	}
 
-	// For image type, allow empty source_data if allowEmptyImage is true (will generate blank image)
 	if req.SourceData == "" {
 		if req.SourceType == models.SourceTypeImage && allowEmptyImage {
 			return "", true
@@ -85,7 +85,6 @@ func validateSourceRequest(req LocationSourceRequest, allowEmptyImage bool) (str
 	}
 
 	if req.SourceType == models.SourceTypeLink {
-		// Accept any valid URL (http/https)
 		if !isValidURL(req.SourceData) {
 			return "link harus berupa URL yang valid (http:// atau https://)", false
 		}
@@ -93,7 +92,6 @@ func validateSourceRequest(req LocationSourceRequest, allowEmptyImage bool) (str
 
 	// Validate base64 for "image" type
 	if req.SourceType == models.SourceTypeImage {
-		// Basic validation - should start with data:image or be a valid base64
 		if len(req.SourceData) < 100 {
 			return "data gambar base64 tidak valid atau terlalu pendek", false
 		}
@@ -102,20 +100,18 @@ func validateSourceRequest(req LocationSourceRequest, allowEmptyImage bool) (str
 	return "", true
 }
 
-// CreateLocationSource creates or replaces source for a location
+// Membuat atau mengganti sumber (source) pada lokasi
 func CreateLocationSource(c *fiber.Ctx) error {
 	locationID := c.Params("location_id")
 	userRole := c.Locals("role").(string)
 	userID := c.Locals("user_id").(string)
 
-	// Check if location exists
 	var location models.Location
 	err := database.DB.Collection("locations").FindOne(context.Background(), bson.M{"_id": locationID}).Decode(&location)
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "lokasi tidak ditemukan"})
 	}
 
-	// Check access
 	if location.UserID != userID && userRole != "superadmin" {
 		return c.Status(403).JSON(fiber.Map{"error": "tidak memiliki akses untuk menambah source ke lokasi ini"})
 	}
@@ -131,9 +127,8 @@ func CreateLocationSource(c *fiber.Ctx) error {
 
 	finalSourceData := req.SourceData
 
-	// Handle Image: Convert Base64 to WebP File
+	// Base64 to WebP File
 	if req.SourceType == models.SourceTypeImage {
-		// We expect Base64 here
 		webPath, err := utils.ProcessBase64Image(req.SourceData, location.Nama_lokasi, locationID)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
@@ -146,7 +141,6 @@ func CreateLocationSource(c *fiber.Ctx) error {
 
 	source, err := models.CreateLocationSource(locationID, req.SourceType, finalSourceData)
 	if err != nil {
-		// If DB insert fails, maybe cleanup the file?
 		if req.SourceType == models.SourceTypeImage {
 			utils.CleanupOldImage(finalSourceData)
 		}
@@ -159,20 +153,18 @@ func CreateLocationSource(c *fiber.Ctx) error {
 	})
 }
 
-// GetLocationSource retrieves source for a location
+// Mengambil data source pada lokasi tertentu
 func GetLocationSource(c *fiber.Ctx) error {
 	locationID := c.Params("location_id")
 	userRole := c.Locals("role").(string)
 	userID := c.Locals("user_id").(string)
 
-	// Check if location exists
 	var location models.Location
 	err := database.DB.Collection("locations").FindOne(context.Background(), bson.M{"_id": locationID}).Decode(&location)
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "lokasi tidak ditemukan"})
 	}
 
-	// Check access for non-public locations
 	if !location.Publik && userRole != "superadmin" {
 		var user models.User
 		err := database.DB.Collection("users").FindOne(context.Background(), bson.M{"_id": userID}).Decode(&user)
@@ -192,20 +184,18 @@ func GetLocationSource(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": source})
 }
 
-// UpdateLocationSource updates source for a location
+// Mengupdate data source pada lokasi tertentu
 func UpdateLocationSource(c *fiber.Ctx) error {
 	locationID := c.Params("location_id")
 	userRole := c.Locals("role").(string)
 	userID := c.Locals("user_id").(string)
 
-	// Check if location exists
 	var location models.Location
 	err := database.DB.Collection("locations").FindOne(context.Background(), bson.M{"_id": locationID}).Decode(&location)
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "lokasi tidak ditemukan"})
 	}
 
-	// Check access
 	if location.UserID != userID && userRole != "superadmin" {
 		return c.Status(403).JSON(fiber.Map{"error": "tidak memiliki akses untuk mengubah source lokasi ini"})
 	}
@@ -219,18 +209,15 @@ func UpdateLocationSource(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": errMsg})
 	}
 
-	// Get old source for cleanup
 	oldSource, _ := models.GetLocationSource(locationID)
 
 	finalSourceData := req.SourceData
 
-	// Handle Image: Convert Base64 to WebP File or generate blank
 	if req.SourceType == models.SourceTypeImage {
 		var webPath string
 		var err error
 
 		if req.SourceData == "" {
-			// No image data provided, generate blank image
 			webPath, err = utils.GenerateBlankImage(location.Nama_lokasi, locationID)
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
@@ -239,7 +226,6 @@ func UpdateLocationSource(c *fiber.Ctx) error {
 				})
 			}
 		} else {
-			// New image uploaded in Base64
 			webPath, err = utils.ProcessBase64Image(req.SourceData, location.Nama_lokasi, locationID)
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
@@ -250,18 +236,16 @@ func UpdateLocationSource(c *fiber.Ctx) error {
 		}
 		finalSourceData = webPath
 
-		// Cleanup old image if existed
 		if oldSource != nil && oldSource.SourceType == models.SourceTypeImage {
 			utils.CleanupOldImage(oldSource.SourceData)
 		}
 	} else if req.SourceType == models.SourceTypeLink {
-		// If switching to Link, cleanup old image if existed
 		if oldSource != nil && oldSource.SourceType == models.SourceTypeImage {
 			utils.CleanupOldImage(oldSource.SourceData)
 		}
 	}
 
-	// This will replace the old source with the new one
+	// Replace source data di database
 	source, err := models.UpdateLocationSource(locationID, req.SourceType, finalSourceData)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
@@ -273,25 +257,22 @@ func UpdateLocationSource(c *fiber.Ctx) error {
 	})
 }
 
-// DeleteLocationSource deletes source for a location
+// Menghapus data source pada lokasi tertentu
 func DeleteLocationSource(c *fiber.Ctx) error {
 	locationID := c.Params("location_id")
 	userRole := c.Locals("role").(string)
 	userID := c.Locals("user_id").(string)
 
-	// Check if location exists
 	var location models.Location
 	err := database.DB.Collection("locations").FindOne(context.Background(), bson.M{"_id": locationID}).Decode(&location)
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "lokasi tidak ditemukan"})
 	}
 
-	// Check access
 	if location.UserID != userID && userRole != "superadmin" {
 		return c.Status(403).JSON(fiber.Map{"error": "tidak memiliki akses untuk menghapus source lokasi ini"})
 	}
 
-	// Clean up file if it's an image
 	source, _ := models.GetLocationSource(locationID)
 	if source != nil && source.SourceType == models.SourceTypeImage {
 		utils.CleanupOldImage(source.SourceData)
@@ -305,20 +286,19 @@ func DeleteLocationSource(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "source berhasil dihapus"})
 }
 
-// GetSourceOptions returns available source type options
+// Mengambil daftar tipe source yang tersedia
 func GetSourceOptions(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"source_types": models.SourceTypeOptions,
 	})
 }
 
-// GetPlayableURL returns playable URL for a location source
-// For YouTube: returns embed URL
-// For Image: returns image path
+// Mengambil URL yang dapat diputar untuk source lokasi
+// Untuk YouTube: mengembalikan embed URL
+// Untuk Image: mengembalikan path gambar
 func GetPlayableURL(c *fiber.Ctx) error {
 	locationID := c.Params("location_id")
 
-	// Get location source
 	source, err := models.GetLocationSource(locationID)
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "source tidak ditemukan untuk lokasi ini"})
@@ -335,7 +315,7 @@ func GetPlayableURL(c *fiber.Ctx) error {
 		return c.JSON(response)
 	}
 
-	// For link type (YouTube only now)
+	// Hanya YouTube link saja sekarang
 	if isYouTubeURL(source.SourceData) {
 		videoID := extractYouTubeVideoID(source.SourceData)
 		if videoID != "" {
@@ -349,7 +329,7 @@ func GetPlayableURL(c *fiber.Ctx) error {
 			response["error"] = "tidak dapat mengekstrak video ID"
 		}
 	} else {
-		// Fallback for any other link
+		// Fallback link lain
 		response["type"] = "direct"
 		response["url"] = source.SourceData
 	}

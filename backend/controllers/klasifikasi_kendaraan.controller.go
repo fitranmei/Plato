@@ -9,6 +9,7 @@ import (
 	"backend/models"
 )
 
+// Mengambil seluruh data master klasifikasi kendaraan, bisa difilter berdasarkan tipe lokasi
 func GetAllMasterKlasifikasi(c *fiber.Ctx) error {
 	filter := bson.M{}
 
@@ -18,7 +19,7 @@ func GetAllMasterKlasifikasi(c *fiber.Ctx) error {
 
 	klasifikasi, err := models.GetAllMasterKlasifikasi()
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "gagal mengambil data master klasifikasi kendaraan"})
+		return c.Status(500).JSON(fiber.Map{"error": "Gagal mengambil data master klasifikasi kendaraan"})
 	}
 
 	if tipeLokasi := c.Query("tipe_lokasi"); tipeLokasi != "" {
@@ -37,6 +38,7 @@ func GetAllMasterKlasifikasi(c *fiber.Ctx) error {
 	})
 }
 
+// Mengambil template klasifikasi kendaraan berdasarkan tipe lokasi
 func GetKlasifikasiTemplate(c *fiber.Ctx) error {
 	tipeLokasi := c.Query("tipe_lokasi")
 
@@ -59,15 +61,16 @@ func GetKlasifikasiTemplate(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": result})
 }
 
+// Inisialisasi data master klasifikasi kendaraan
 func InitMasterKlasifikasiHandler(c *fiber.Ctx) error {
 	err := models.InitMasterKlasifikasi()
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "gagal menginisialisasi master klasifikasi"})
+		return c.Status(500).JSON(fiber.Map{"error": "Gagal menginisialisasi master klasifikasi"})
 	}
-
-	return c.JSON(fiber.Map{"message": "master klasifikasi berhasil diinisialisasi"})
+	return c.JSON(fiber.Map{"message": "Master klasifikasi berhasil diinisialisasi"})
 }
 
+// Update batas panjang klasifikasi
 type BulkUpdateMasterKlasifikasiRequest struct {
 	TipeLokasi string `json:"tipe_lokasi"`
 	Data       []struct {
@@ -76,24 +79,28 @@ type BulkUpdateMasterKlasifikasiRequest struct {
 	} `json:"data"`
 }
 
+// Update batas panjang klasifikasi kendaraan
 func UpdateBulkMasterKlasifikasi(c *fiber.Ctx) error {
 	var req BulkUpdateMasterKlasifikasiRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "request tidak valid"})
+		return c.Status(400).JSON(fiber.Map{"error": "Request tidak valid"})
 	}
 
 	if req.TipeLokasi == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "tipe_lokasi diperlukan"})
+		return c.Status(400).JSON(fiber.Map{"error": "Tipe lokasi diperlukan"})
 	}
 
 	allKlasifikasi, err := models.GetMasterKlasifikasiByTipeLokasi(req.TipeLokasi)
+
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "gagal mengambil data klasifikasi"})
-	}
-	if len(allKlasifikasi) == 0 {
-		return c.Status(404).JSON(fiber.Map{"error": "tipe lokasi tidak ditemukan"})
+		return c.Status(500).JSON(fiber.Map{"error": "Gagal mengambil data klasifikasi"})
 	}
 
+	if len(allKlasifikasi) == 0 {
+		return c.Status(404).JSON(fiber.Map{"error": "Tipe lokasi tidak ditemukan"})
+	}
+
+	// Urutkan data klasifikasi berdasarkan kelas
 	for i := 0; i < len(allKlasifikasi)-1; i++ {
 		for j := i + 1; j < len(allKlasifikasi); j++ {
 			if allKlasifikasi[i].Kelas > allKlasifikasi[j].Kelas {
@@ -108,6 +115,7 @@ func UpdateBulkMasterKlasifikasi(c *fiber.Ctx) error {
 	}
 
 	var currentPanjang float64 = 0
+	// Validasi urutan batas panjang
 	for _, k := range allKlasifikasi {
 		if k.IsKelasTerakhir {
 			continue
@@ -120,7 +128,7 @@ func UpdateBulkMasterKlasifikasi(c *fiber.Ctx) error {
 
 		if newBatas <= currentPanjang {
 			return c.Status(400).JSON(fiber.Map{
-				"error": fmt.Sprintf("batas panjang kelas %d (%.2f) harus lebih besar dari batas sebelumnya (%.2f)", k.Kelas, newBatas, currentPanjang),
+				"error": fmt.Sprintf("Batas panjang kelas %d (%.2f) harus lebih besar dari batas sebelumnya (%.2f)", k.Kelas, newBatas, currentPanjang),
 			})
 		}
 
@@ -129,6 +137,7 @@ func UpdateBulkMasterKlasifikasi(c *fiber.Ctx) error {
 	}
 
 	var lastBatasPanjang float64 = 0
+	// Proses update data klasifikasi
 	for i, k := range allKlasifikasi {
 		var panjangAwal float64 = 0
 		if i > 0 {
@@ -151,7 +160,7 @@ func UpdateBulkMasterKlasifikasi(c *fiber.Ctx) error {
 
 		err := models.UpdateMasterKlasifikasi(k.ID, update)
 		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": fmt.Sprintf("gagal mengupdate kelas %d", k.Kelas)})
+			return c.Status(500).JSON(fiber.Map{"error": fmt.Sprintf("Gagal mengupdate kelas %d", k.Kelas)})
 		}
 
 		lastBatasPanjang = batasPanjang
@@ -159,7 +168,7 @@ func UpdateBulkMasterKlasifikasi(c *fiber.Ctx) error {
 
 	updatedData, _ := models.GetMasterKlasifikasiByTipeLokasi(req.TipeLokasi)
 	return c.JSON(fiber.Map{
-		"message": "update bulk berhasil",
+		"message": "Update bulk berhasil",
 		"data":    updatedData,
 	})
 }

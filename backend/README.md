@@ -2,13 +2,14 @@
 
 ## Daftar Isi
 1. [Gambaran Umum](#gambaran-umum)
-2. [Struktur Folder](#struktur-folder)
-3. [Konfigurasi](#konfigurasi)
-4. [Model Data](#model-data)
-5. [API Endpoints](#api-endpoints)
-6. [Middleware](#middleware)
-7. [Services](#services)
-8. [Cara Menjalankan](#cara-menjalankan)
+2. [Fitur Utama](#fitur-utama)
+3. [Struktur Folder](#struktur-folder)
+4. [Konfigurasi](#konfigurasi)
+5. [Model Data](#model-data)
+6. [API Endpoints](#api-endpoints)
+7. [Middleware](#middleware)
+8. [Services](#services)
+9. [Cara Menjalankan](#cara-menjalankan)
 
 ---
 
@@ -25,6 +26,32 @@ Sistem ini berfungsi untuk:
 - Mengelola lokasi pemantauan
 - Menganalisis data lalu lintas menggunakan metode **MKJI 1997** dan **PKJI 2023**
 - Menghitung kapasitas jalan dan tingkat pelayanan
+
+---
+
+## Fitur Utama
+
+### 1. Manajemen Lokasi dengan Source Media
+- **Dukungan Multi-Source**: Setiap lokasi dapat memiliki source berupa link YouTube atau gambar
+- **Validasi Otomatis**: Link YouTube divalidasi secara real-time
+- **Pemrosesan Gambar**: Upload gambar dalam format base64, otomatis dikonversi ke WebP
+- **Generasi Gambar Kosong**: Sistem dapat membuat gambar placeholder kosong untuk lokasi baru
+- **Cleanup Otomatis**: Gambar lama dihapus saat diganti atau lokasi dihapus
+
+### 2. Keamanan API Key Kamera
+- **Generasi Otomatis**: API key selalu dibuat oleh sistem backend, tidak dapat diubah user
+- **Immutability**: API key tidak dapat diupdate setelah kamera dibuat
+- **Unik Otomatis**: Sistem memastikan API key unik di seluruh sistem
+
+### 3. Seeder Superadmin yang Robust
+- **Upsert Logic**: Superadmin dapat dibuat tanpa batas dengan logika replace berdasarkan ID
+- **Data Konsisten**: Mencegah duplikasi dan memastikan data superadmin selalu terbaru
+- **Isolasi API**: Superadmin hanya dapat dibuat melalui seeder, bukan API publik
+
+### 4. Dokumentasi dan Logging dalam Bahasa Indonesia
+- **Komentar Kode**: Semua komentar dalam kode telah diterjemahkan ke bahasa Indonesia
+- **Logging Konsisten**: Pesan log error dan informasi menggunakan bahasa Indonesia
+- **Dokumentasi Lengkap**: README dan dokumentasi internal dalam bahasa Indonesia
 
 ---
 
@@ -126,6 +153,21 @@ backend/
 | `zona_waktu` | float | Offset waktu dari UTC |
 | `interval` | int | Interval pengambilan data (detik) |
 | `publik` | bool | Apakah lokasi publik |
+| `hide_lokasi` | bool | Apakah lokasi disembunyikan |
+| `keterangan` | string | Catatan tambahan |
+
+**Source Media Lokasi:**
+Setiap lokasi dapat memiliki source media yang terpisah dari data lokasi utama:
+
+| Field | Tipe | Deskripsi |
+|-------|------|-----------|
+| `source_type` | string | Tipe source: `link` atau `image` |
+| `source_data` | string | URL YouTube (untuk link) atau path gambar (untuk image) |
+
+**Validasi Source:**
+- **Link**: Harus berupa URL YouTube yang valid (youtu.be atau youtube.com)
+- **Image**: Dapat berupa base64 string yang akan dikonversi ke WebP
+- **Fallback**: Jika gagal memproses gambar, sistem akan menggunakan gambar placeholder
 
 **Pilihan Tipe Lokasi:**
 - `perkotaan`: Jalan di area perkotaan
@@ -152,8 +194,10 @@ backend/
 - Setiap zona memiliki `id_zona_arah` dan `arah` (nama arah)
 
 **Catatan API Key:**
-- Jika tidak diisi, akan di-generate otomatis menggunakan UUID
-- Sistem akan memastikan API key unik (jika duplikat, generate ulang otomatis)
+- API key **selalu di-generate otomatis** oleh sistem backend
+- API key **tidak dapat diubah** setelah kamera dibuat (immutable)
+- Sistem memastikan API key unik di seluruh sistem
+- Jika duplikat terdeteksi, sistem akan generate ulang otomatis
 
 ---
 
@@ -277,6 +321,35 @@ Master data klasifikasi kendaraan berdasarkan tipe lokasi:
 | POST | `/locations` | Buat lokasi baru | Superadmin |
 | PUT | `/locations/:id` | Update lokasi | Superadmin |
 | DELETE | `/locations/:id` | Hapus lokasi | Superadmin |
+
+### Source Lokasi
+
+| Method | Endpoint | Deskripsi | Akses |
+|--------|----------|-----------|-------|
+| GET | `/locations/:location_id/source` | Ambil source lokasi | Login |
+| GET | `/locations/:location_id/source/playable` | URL yang dapat diputar | Login |
+| POST | `/locations/:location_id/source` | Buat source baru | Superadmin |
+| PUT | `/locations/:location_id/source` | Update source | Superadmin |
+| DELETE | `/locations/:location_id/source` | Hapus source | Superadmin |
+| GET | `/source-options` | Opsi tipe source | Login |
+| GET | `/location-images/*` | Serve gambar lokasi | Publik |
+
+**Format Source Data:**
+```json
+{
+  "source_type": "link",
+  "source_data": "https://youtu.be/VIDEO_ID"
+}
+```
+
+atau
+
+```json
+{
+  "source_type": "image", 
+  "source_data": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."
+}
+```
 
 ---
 
@@ -497,9 +570,15 @@ go mod download
 
 ### 3. Jalankan Seeder (Opsional)
 ```bash
-# Untuk membuat data awal
+# Untuk membuat data awal termasuk superadmin
 go run cmd/seeder/main.go
 ```
+
+**Fitur Seeder Superadmin:**
+- Membuat superadmin tanpa batas jumlah
+- Menggunakan logika upsert (replace jika ID sudah ada)
+- Data superadmin selalu konsisten dan terbaru
+- Superadmin hanya dapat dibuat melalui seeder (bukan API)
 
 ### 4. Jalankan Server
 ```bash
@@ -521,15 +600,21 @@ docker run -p 8080:8080 --env-file .env plato-backend
 
 ## Catatan Penting
 
-1. **API Key Kamera**: Pastikan API key unik untuk setiap kamera. Sistem akan otomatis generate ulang jika ditemukan duplikat.
+1. **API Key Kamera**: API key selalu di-generate oleh sistem dan tidak dapat diubah setelah kamera dibuat.
 
-2. **Zona Arah**: Konfigurasi zona arah di kamera harus sesuai dengan data yang dikirim. Data zona yang tidak terdaftar akan diabaikan.
+2. **Source Media Lokasi**: Setiap lokasi dapat memiliki source berupa link YouTube atau gambar. Sistem akan memvalidasi dan memproses data secara otomatis.
 
-3. **Interval Data**: Setiap lokasi dapat memiliki interval pengambilan data yang berbeda (60s - 3600s).
+3. **Zona Arah**: Konfigurasi zona arah di kamera harus sesuai dengan data yang dikirim. Data zona yang tidak terdaftar akan diabaikan.
 
-4. **Timezone**: Waktu disimpan berdasarkan `zona_waktu` lokasi atau `Utc` dari data kamera.
+4. **Interval Data**: Setiap lokasi dapat memiliki interval pengambilan data yang berbeda (60s - 3600s).
 
-5. **Backup Data**: Raw data disimpan terpisah untuk keperluan audit dan re-processing.
+5. **Timezone**: Waktu disimpan berdasarkan `zona_waktu` lokasi atau `Utc` dari data kamera.
+
+6. **Backup Data**: Raw data disimpan terpisah untuk keperluan audit dan re-processing.
+
+7. **Cleanup Gambar**: Sistem otomatis membersihkan gambar lama saat diganti atau lokasi dihapus.
+
+8. **Seeder Superadmin**: Superadmin hanya dapat dibuat melalui seeder dengan logika upsert untuk konsistensi data.
 
 ---
 
@@ -543,9 +628,26 @@ docker run -p 8080:8080 --env-file .env plato-backend
 - Pastikan konfigurasi zona_arah di kamera sudah lengkap
 - Cek log untuk warning zona yang hilang
 
-### Error: "Token tidak valid"
-- Login ulang untuk mendapatkan token baru
-- Pastikan token dikirim dengan format `Bearer <token>`
+### Error: "Source type tidak valid"
+- Source type hanya menerima `link` atau `image`
+- Pastikan format data sesuai: URL untuk link, base64 string untuk image
+
+### Error: "Link YouTube tidak valid"
+- Pastikan URL YouTube menggunakan format youtu.be atau youtube.com
+- Sistem mendukung berbagai format YouTube (watch, embed, live, dll)
+
+### Error: "Gagal memproses gambar base64"
+- Pastikan base64 string valid dan merupakan gambar yang didukung
+- Sistem otomatis mengkonversi ke format WebP
+- Jika gagal, sistem akan menggunakan gambar placeholder
+
+### Error: "API key tidak dapat diubah"
+- API key kamera bersifat immutable setelah dibuat
+- Untuk mengubah API key, hapus dan buat kamera baru
+
+### Error: "Superadmin hanya dapat dibuat melalui seeder"
+- Superadmin tidak dapat didaftarkan melalui API `/register`
+- Gunakan seeder untuk membuat akun superadmin
 
 ---
 
