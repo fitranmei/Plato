@@ -14,7 +14,7 @@ type Config struct {
 }
 
 func Load() *Config {
-	// Load .env file if exists (optional for Docker)
+	// Load .env file
 	_ = godotenv.Load()
 
 	port := os.Getenv("APP_PORT")

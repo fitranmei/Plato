@@ -12,6 +12,7 @@ import (
 	"backend/utils"
 )
 
+// Struktur request untuk membuat atau mengupdate lokasi
 type LocationRequest struct {
 	Balai          string  `json:"balai,omitempty"`
 	Nama_lokasi    string  `json:"nama_lokasi"`
@@ -30,10 +31,11 @@ type LocationRequest struct {
 	Publik         bool    `json:"publik"`
 	Hide_lokasi    bool    `json:"hide_lokasi"`
 	Keterangan     string  `json:"keterangan"`
-	SourceType     string  `json:"source_type,omitempty"` // "link" or "image"
-	SourceData     string  `json:"source_data,omitempty"` // URL for link, base64 string for image
+	SourceType     string  `json:"source_type,omitempty"` // "link" atau "image"
+	SourceData     string  `json:"source_data,omitempty"` // URL untuk link, string base64 untuk image
 }
 
+// validateLocationRequest memvalidasi request lokasi dan mengembalikan pesan error jika tidak valid
 func validateLocationRequest(req LocationRequest) (string, bool) {
 	if req.Nama_lokasi == "" {
 		return "nama_lokasi diperlukan", false
@@ -74,6 +76,7 @@ func validateLocationRequest(req LocationRequest) (string, bool) {
 	return "", true
 }
 
+// CreateLocation membuat lokasi baru berdasarkan request
 func CreateLocation(c *fiber.Ctx) error {
 	var req LocationRequest
 
@@ -137,7 +140,7 @@ func CreateLocation(c *fiber.Ctx) error {
 
 	var source *models.LocationSource
 
-	// Handle source creation
+	// Menangani pembuatan source jika disediakan
 	if req.SourceType != "" {
 		if !models.IsValidSourceType(req.SourceType) {
 			return c.Status(400).JSON(fiber.Map{"error": "source_type tidak valid. Pilihan: 'link' atau 'image'"})
@@ -146,29 +149,25 @@ func CreateLocation(c *fiber.Ctx) error {
 		var finalSourceData string
 
 		if req.SourceType == models.SourceTypeImage {
-			// Try to process user provided image
 			if req.SourceData != "" {
-				webPath, err := utils.ProcessBase64Image(req.SourceData, location.Nama_lokasi, id)
-				if err == nil {
-					finalSourceData = webPath
+				blankPath, err := models.GenerateBlankImage(location.Nama_lokasi, id)
+				if err != nil {
+					finalSourceData = "/api/location-images/default_placeholder.png"
 				} else {
-					// Log error (should use a proper logger in production)
-					// Proceed to generate blank image
+					finalSourceData = blankPath
 				}
 			}
 
-			// If no user image or processing failed, generate blank image
 			if finalSourceData == "" {
 				blankPath, err := models.GenerateBlankImage(location.Nama_lokasi, id)
 				if err != nil {
-					// If even blank generation fails, use a safe default string so DB record is still created
 					finalSourceData = "/api/location-images/default_placeholder.png"
 				} else {
 					finalSourceData = blankPath
 				}
 			}
 		} else if req.SourceType == models.SourceTypeLink {
-			// For link type: source_data is required (YouTube URL)
+			// Hanya YouTube link saja sekarang
 			if req.SourceData == "" {
 				return c.Status(400).JSON(fiber.Map{"error": "source_data (YouTube URL) diperlukan untuk source_type link"})
 			}
@@ -177,7 +176,6 @@ func CreateLocation(c *fiber.Ctx) error {
 
 		source, err = models.CreateLocationSource(id, req.SourceType, finalSourceData)
 		if err != nil {
-			// Location created but source failed - log warning but don't fail
 			return c.Status(201).JSON(fiber.Map{
 				"message": "lokasi berhasil dibuat, tetapi source gagal ditambahkan: " + err.Error(),
 				"data":    location,
@@ -196,6 +194,7 @@ func CreateLocation(c *fiber.Ctx) error {
 	return c.Status(201).JSON(response)
 }
 
+// Mengambil semua lokasi berdasarkan filter dan role user
 func GetAllLocations(c *fiber.Ctx) error {
 	filter := bson.M{}
 	userRole := c.Locals("role").(string)
@@ -242,6 +241,7 @@ func GetAllLocations(c *fiber.Ctx) error {
 	})
 }
 
+// Mengambil lokasi berdasarkan ID dengan validasi akses
 func GetLocationByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 	userRole := c.Locals("role").(string)
@@ -264,7 +264,6 @@ func GetLocationByID(c *fiber.Ctx) error {
 		}
 	}
 
-	// Get source if exists
 	source, _ := models.GetLocationSource(id)
 
 	response := fiber.Map{"data": location}
@@ -275,6 +274,7 @@ func GetLocationByID(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
+// Mengupdate lokasi yang ada berdasarkan ID
 func UpdateLocation(c *fiber.Ctx) error {
 	id := c.Params("id")
 	userID := c.Locals("user_id").(string)
@@ -329,7 +329,6 @@ func UpdateLocation(c *fiber.Ctx) error {
 	var updatedLocation models.Location
 	database.DB.Collection("locations").FindOne(context.Background(), bson.M{"_id": id}).Decode(&updatedLocation)
 
-	// Update source if provided
 	var source *models.LocationSource
 	if req.SourceType != "" {
 		if !models.IsValidSourceType(req.SourceType) {
@@ -339,32 +338,11 @@ func UpdateLocation(c *fiber.Ctx) error {
 		var finalSourceData string
 
 		if req.SourceType == models.SourceTypeImage {
-			// Try to process user provided image if any
-			if req.SourceData != "" {
-				webPath, err := utils.ProcessBase64Image(req.SourceData, req.Nama_lokasi, id)
-				if err == nil {
-					finalSourceData = webPath
-				}
-			}
-
-			// If no user image or processing failed, generate blank image
-			// ONLY if we are switching to image or explicit update requested without data
-			if finalSourceData == "" {
-				blankPath, err := models.GenerateBlankImage(req.Nama_lokasi, id)
-				if err != nil {
-					finalSourceData = "/api/location-images/default_placeholder.png"
-				} else {
-					finalSourceData = blankPath
-				}
-			}
-
-			// Cleanup old image if existing
+			// Ambil source lama terlebih dahulu
 			oldSource, _ := models.GetLocationSource(id)
+
 			if oldSource != nil && oldSource.SourceType == models.SourceTypeImage {
-				// Only cleanup if we actually generated a NEW image path
-				if finalSourceData != oldSource.SourceData {
-					utils.CleanupOldImage(oldSource.SourceData)
-				}
+				finalSourceData = oldSource.SourceData
 			}
 		} else if req.SourceType == models.SourceTypeLink {
 			if req.SourceData == "" {
@@ -372,14 +350,14 @@ func UpdateLocation(c *fiber.Ctx) error {
 			}
 			finalSourceData = req.SourceData
 
-			// Clean up image if switching to Link
+			// Cleanup gambar jika switch ke Link
 			oldSource, _ := models.GetLocationSource(id)
 			if oldSource != nil && oldSource.SourceType == models.SourceTypeImage {
 				utils.CleanupOldImage(oldSource.SourceData)
 			}
 		}
 
-		// UpdateLocationSource will delete old source and create new one
+		// UpdateLocationSource akan menghapus source lama dan membuat yang baru
 		var errSource error
 		source, errSource = models.UpdateLocationSource(id, req.SourceType, finalSourceData)
 		if errSource != nil {
@@ -401,6 +379,7 @@ func UpdateLocation(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
+// Menghapus lokasi berdasarkan ID dengan kamera dan source terkait
 func DeleteLocation(c *fiber.Ctx) error {
 	id := c.Params("id")
 	userRole := c.Locals("role").(string)
@@ -415,15 +394,15 @@ func DeleteLocation(c *fiber.Ctx) error {
 		return c.Status(403).JSON(fiber.Map{"error": "tidak memiliki akses untuk menghapus lokasi ini"})
 	}
 
-	// Delete associated source first
-	// Cleanup file if image
+	// Hapus source terkait terlebih dahulu
+	// Cleanup file jika image
 	existingSource, _ := models.GetLocationSource(id)
 	if existingSource != nil && existingSource.SourceType == models.SourceTypeImage {
 		utils.CleanupOldImage(existingSource.SourceData)
 	}
 	_ = models.DeleteLocationSource(id)
 
-	// Delete associated cameras (Cascade Delete)
+	// Hapus kamera terkait
 	_, err = database.DB.Collection("cameras").DeleteMany(context.Background(), bson.M{"lokasi_id": id})
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "gagal menghapus kamera terkait"})
